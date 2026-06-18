@@ -1,0 +1,120 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  color: #e5eef7;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) 1fr;
+  background:
+    radial-gradient(circle at top left, rgba(54, 83, 115, 0.45), transparent 32%),
+    linear-gradient(135deg, #08111f 0%, #10233f 52%, #163458 100%);
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem;
+  background: rgba(4, 11, 22, 0.48);
+  backdrop-filter: blur(16px);
+  border-right: 1px solid rgba(173, 205, 240, 0.12);
+}
+
+.brand h1,
+.lesson-card h2 {
+  margin: 0;
+}
+
+.eyebrow,
+.lesson-label {
+  margin: 0 0 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  color: #7fbeff;
+}
+
+.subtitle,
+.lesson-card p {
+  margin: 0.75rem 0 0;
+  color: #aac0da;
+  line-height: 1.6;
+}
+
+.nav {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.nav-link {
+  display: block;
+  padding: 0.95rem 1rem;
+  text-decoration: none;
+  border-radius: 1rem;
+  border: 1px solid rgba(173, 205, 240, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.nav-link:hover,
+.nav-link:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(127, 190, 255, 0.4);
+  background: rgba(127, 190, 255, 0.08);
+  outline: none;
+}
+
+.nav-link.is-active {
+  border-color: rgba(127, 190, 255, 0.55);
+  background: linear-gradient(135deg, rgba(46, 115, 196, 0.35), rgba(28, 62, 99, 0.5));
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.18);
+}
+
+.nav-label,
+.nav-hint {
+  display: block;
+}
+
+.nav-label {
+  color: #f5f9fd;
+  font-weight: 700;
+}
+
+.nav-hint {
+  margin-top: 0.3rem;
+  color: #98afc8;
+  font-size: 0.92rem;
+}
+
+.lesson-card {
+  margin-top: auto;
+  padding: 1.2rem;
+  border-radius: 1.25rem;
+  background: rgba(7, 20, 38, 0.7);
+  border: 1px solid rgba(173, 205, 240, 0.12);
+}
+
+.content {
+  padding: 2rem;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid rgba(173, 205, 240, 0.12);
+  }
+
+  .content {
+    padding: 1.25rem;
+  }
+}
