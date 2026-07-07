@@ -1,16 +1,14 @@
-:host {
+﻿:host {
   display: block;
   min-height: 100vh;
-  color: #e5eef7;
+  color: var(--text-color);
 }
 
 .app-shell {
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(280px, 340px) 1fr;
-  background:
-    radial-gradient(circle at top left, rgba(54, 83, 115, 0.45), transparent 32%),
-    linear-gradient(135deg, #08111f 0%, #10233f 52%, #163458 100%);
+  background: var(--app-bg);
 }
 
 .sidebar {
@@ -18,29 +16,37 @@
   flex-direction: column;
   gap: 2rem;
   padding: 2rem;
-  background: rgba(4, 11, 22, 0.48);
-  backdrop-filter: blur(16px);
-  border-right: 1px solid rgba(173, 205, 240, 0.12);
+  background: color-mix(in srgb, var(--surface-app-dark) 78%, transparent);
+  border-right: 1px solid var(--border-muted);
+  box-shadow: var(--shadow-panel);
 }
 
 .brand h1,
-.lesson-card h2 {
+.session-card h2,
+.session-card p {
   margin: 0;
 }
 
+.brand h1 {
+  color: var(--surface-solid);
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 0.98;
+}
+
 .eyebrow,
-.lesson-label {
+.session-label {
   margin: 0 0 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
+  color: var(--primary);
   font-size: 0.72rem;
-  color: #7fbeff;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 .subtitle,
-.lesson-card p {
+.session-card p {
   margin: 0.75rem 0 0;
-  color: #aac0da;
+  color: var(--text-soft);
   line-height: 1.6;
 }
 
@@ -50,12 +56,16 @@
 }
 
 .nav-link {
-  display: block;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.85rem;
   padding: 0.95rem 1rem;
   text-decoration: none;
-  border-radius: 1rem;
-  border: 1px solid rgba(173, 205, 240, 0.12);
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-muted);
+  background: color-mix(in srgb, var(--surface-muted) 22%, transparent);
+  color: var(--text-soft-strong);
   transition:
     transform 180ms ease,
     border-color 180ms ease,
@@ -65,15 +75,15 @@
 .nav-link:hover,
 .nav-link:focus-visible {
   transform: translateY(-1px);
-  border-color: rgba(127, 190, 255, 0.4);
-  background: rgba(127, 190, 255, 0.08);
+  border-color: var(--border-soft);
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
   outline: none;
 }
 
 .nav-link.is-active {
-  border-color: rgba(127, 190, 255, 0.55);
-  background: linear-gradient(135deg, rgba(46, 115, 196, 0.35), rgba(28, 62, 99, 0.5));
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.18);
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 24%, var(--surface-muted));
+  box-shadow: var(--shadow-lift);
 }
 
 .nav-label,
@@ -82,25 +92,42 @@
 }
 
 .nav-label {
-  color: #f5f9fd;
-  font-weight: 700;
+  color: var(--surface-solid);
+  font-weight: 800;
 }
 
 .nav-hint {
   margin-top: 0.3rem;
-  color: #98afc8;
-  font-size: 0.92rem;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  line-height: 1.35;
 }
 
-.lesson-card {
+.session-card {
   margin-top: auto;
+  display: grid;
+  gap: 1rem;
   padding: 1.2rem;
-  border-radius: 1.25rem;
-  background: rgba(7, 20, 38, 0.7);
-  border: 1px solid rgba(173, 205, 240, 0.12);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-muted);
+  background: color-mix(in srgb, var(--surface-solid) 10%, transparent);
+}
+
+.session-card h2 {
+  overflow-wrap: anywhere;
+  color: var(--surface-solid);
+  font-size: 1rem;
+}
+
+.session-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .content {
+  min-width: 0;
   padding: 2rem;
 }
 
@@ -111,7 +138,7 @@
 
   .sidebar {
     border-right: 0;
-    border-bottom: 1px solid rgba(173, 205, 240, 0.12);
+    border-bottom: 1px solid var(--border-muted);
   }
 
   .content {

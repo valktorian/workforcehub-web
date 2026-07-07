@@ -1,32 +1,52 @@
-<div class="app-shell">
+﻿<div class="app-shell">
   <aside class="sidebar">
     <div class="brand">
-      <p class="eyebrow">Angular 21 Formation</p>
-      <h1>WorkForceHub</h1>
-      <p class="subtitle">Build the platform step by step while learning modern Angular patterns.</p>
+      <p class="eyebrow">WorkForceHub</p>
+      <h1>People operations</h1>
+      <p class="subtitle">Profiles, roles, and workspace access powered by the deployed API.</p>
     </div>
 
     <nav class="nav" aria-label="Primary">
-      @for (item of navigationItems; track item.path) {
+      @for (item of navigationItems(); track item.path) {
         <a
           class="nav-link"
           [routerLink]="item.path"
           routerLinkActive="is-active"
           [routerLinkActiveOptions]="item.path === '/' ? exactMatchOptions : defaultMatchOptions"
         >
-          <span class="nav-label">{{ item.label }}</span>
-          <span class="nav-hint">{{ item.hint }}</span>
+          <mix-icon [name]="item.icon" [size]="22" [ariaLabel]="item.label" />
+          <span>
+            <span class="nav-label">{{ item.label }}</span>
+            <span class="nav-hint">{{ item.hint }}</span>
+          </span>
         </a>
       }
     </nav>
 
-    <section class="lesson-card" aria-label="Current lesson">
-      <p class="lesson-label">Lesson 1</p>
-      <h2>App shell and routing</h2>
-      <p>
-        In this step we are learning how a standalone Angular app is structured around routes,
-        pages, and a shared layout.
-      </p>
+    <section class="session-card" aria-label="Session">
+      @if (isLoggedIn()) {
+        <p class="session-label">Signed in</p>
+        <h2>{{ user()?.email }}</h2>
+        <p>{{ user()?.role }}</p>
+      } @else {
+        <p class="session-label">Guest</p>
+        <h2>Sign in required</h2>
+        <p>Use your WorkForceHub account to continue.</p>
+      }
+
+      <div class="session-actions">
+        <mix-round-button [iconOnly]="true" (clicked)="nextTheme()">
+          <mix-icon name="theme-stars" [size]="20" ariaLabel="Switch theme" />
+        </mix-round-button>
+        <mix-round-button (clicked)="authAction()">
+          <mix-icon
+            [name]="isLoggedIn() ? 'arrow-right-to-bracket-solid-full' : 'circle-user-solid-full'"
+            [size]="18"
+            ariaLabel="Authentication"
+          />
+          {{ isLoggedIn() ? 'Logout' : 'Login' }}
+        </mix-round-button>
+      </div>
     </section>
   </aside>
 

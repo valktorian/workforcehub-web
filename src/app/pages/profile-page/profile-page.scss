@@ -1,0 +1,131 @@
+﻿:host {
+  display: block;
+}
+
+.profile-page {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.profile-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.2rem;
+  padding: clamp(1.2rem, 3vw, 1.8rem);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(145deg, var(--surface-overlay), color-mix(in srgb, var(--surface-solid) 48%, transparent)),
+    radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--primary) 26%, transparent), transparent 34%);
+  box-shadow: var(--shadow-panel);
+}
+
+.profile-avatar {
+  width: clamp(4.8rem, 10vw, 7rem);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 18%, var(--surface-solid));
+  color: var(--text-contrast);
+  font-size: clamp(1.5rem, 3vw, 2.4rem);
+  font-weight: 900;
+  box-shadow: var(--shadow-soft);
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-summary {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.eyebrow,
+.profile-summary h2,
+.profile-summary p,
+.info-panel h3,
+dl {
+  margin: 0;
+}
+
+.eyebrow {
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.profile-summary h2 {
+  color: var(--text-contrast);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1;
+}
+
+.profile-summary p,
+.profile-state {
+  color: var(--text-dim);
+}
+
+.profile-hero a {
+  text-decoration: none;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2rem;
+}
+
+.info-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.info-panel h3 {
+  color: var(--text-contrast);
+}
+
+dl {
+  display: grid;
+  gap: 0.8rem;
+}
+
+dl div {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.4fr) minmax(0, 1fr);
+  gap: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+dl div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+dt {
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-color);
+}
+
+@media (max-width: 800px) {
+  .profile-hero,
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,68 @@
+﻿<section class="profile-page">
+  <article class="profile-hero">
+    <div class="profile-avatar" aria-hidden="true">
+      @if (profile()?.profilePictureUrl) {
+        <img [src]="profile()?.profilePictureUrl" [alt]="displayName()" />
+      } @else {
+        <span>{{ initials() }}</span>
+      }
+    </div>
+
+    <div class="profile-summary">
+      <p class="eyebrow">My profile</p>
+      <h2>{{ displayName() }}</h2>
+      <p>{{ profile()?.jobTitle || 'Your employee profile details from WorkForceHub.' }}</p>
+    </div>
+
+    <a routerLink="/profile/details">
+      <mix-round-button>
+        <mix-icon name="edit" [size]="18" ariaLabel="Edit profile" />
+        Details
+      </mix-round-button>
+    </a>
+  </article>
+
+  @if (profileResource.isLoading()) {
+    <article class="card profile-state">Loading profile...</article>
+  } @else if (profileResource.error()) {
+    <article class="card profile-state">Unable to load your profile.</article>
+  } @else {
+    <section class="profile-grid">
+      <article class="card info-panel">
+        <h3>Account</h3>
+        <dl>
+          <div>
+            <dt>Email</dt>
+            <dd>{{ user()?.email || '-' }}</dd>
+          </div>
+          <div>
+            <dt>Role</dt>
+            <dd>{{ user()?.role || '-' }}</dd>
+          </div>
+          <div>
+            <dt>Account ID</dt>
+            <dd>{{ user()?.accountId || '-' }}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="card info-panel">
+        <h3>Employment</h3>
+        <dl>
+          <div>
+            <dt>Employee number</dt>
+            <dd>{{ profile()?.employeeNumber || '-' }}</dd>
+          </div>
+          <div>
+            <dt>Department</dt>
+            <dd>{{ profile()?.department || '-' }}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{{ profile()?.employmentStatus || '-' }}</dd>
+          </div>
+        </dl>
+      </article>
+    </section>
+  }
+</section>

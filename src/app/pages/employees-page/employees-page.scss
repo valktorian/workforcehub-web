@@ -1,0 +1,39 @@
+﻿:host {
+  display: block;
+}
+
+.page-card {
+  padding: 1.5rem;
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface-card) 88%, transparent);
+  box-shadow: var(--shadow-panel);
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  color: var(--primary);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+h2,
+p {
+  margin: 0;
+}
+
+h2 {
+  color: var(--text-contrast);
+}
+
+p:last-child {
+  margin-top: 0.75rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+code {
+  color: var(--primary);
+}

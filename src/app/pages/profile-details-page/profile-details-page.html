@@ -1,0 +1,78 @@
+﻿<section class="details-page">
+  <header class="details-head">
+    <a routerLink="/profile">
+      <mix-round-button>
+        <mix-icon name="arrow-left" [size]="18" ariaLabel="Back to profile" />
+        Back
+      </mix-round-button>
+    </a>
+
+    <div>
+      <p class="eyebrow">Profile details</p>
+      <h2>Employment and personal information</h2>
+    </div>
+  </header>
+
+  @if (profileResource.isLoading()) {
+    <article class="card details-state">Loading profile...</article>
+  } @else if (profileResource.error()) {
+    <article class="card details-state">Unable to load profile details.</article>
+  } @else {
+    <section class="details-grid">
+      <article class="card table-panel">
+        <h3>Employment details</h3>
+        <div class="table-scroll">
+          <table class="app-table">
+            <tbody>
+              @for (row of rows(); track row[0]) {
+                <tr>
+                  <th scope="row">{{ row[0] }}</th>
+                  <td>{{ row[1] || '-' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card edit-panel">
+        <h3>Personal information</h3>
+        <form class="profile-form" [formGroup]="form" (ngSubmit)="save()">
+          <mix-input
+            formControlName="personalEmail"
+            label="Personal email"
+            placeholder="personal@example.com"
+            type="email"
+            autocomplete="email"
+          />
+          <mix-input
+            formControlName="phoneNumber"
+            label="Phone"
+            placeholder="+33 ..."
+            autocomplete="tel"
+          />
+          <mix-input
+            formControlName="address"
+            label="Address"
+            placeholder="Home address"
+            [multiline]="true"
+            [rows]="3"
+          />
+          <mix-input
+            formControlName="dateOfBirth"
+            label="Date of birth"
+            placeholder="YYYY-MM-DD"
+          />
+
+          @if (error()) {
+            <p class="details-error">{{ error() }}</p>
+          }
+
+          <button class="save-button" type="submit" [disabled]="saving()">
+            {{ saving() ? 'Saving...' : 'Save changes' }}
+          </button>
+        </form>
+      </article>
+    </section>
+  }
+</section>

@@ -1,0 +1,125 @@
+﻿:host {
+  display: block;
+}
+
+.login-shell {
+  min-height: calc(100vh - 4rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.login-hero,
+.login-card {
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-panel);
+}
+
+.login-hero {
+  display: grid;
+  align-content: end;
+  gap: 1rem;
+  padding: clamp(1.5rem, 4vw, 2.8rem);
+  background:
+    linear-gradient(150deg, var(--surface-overlay), color-mix(in srgb, var(--surface-solid) 42%, transparent)),
+    radial-gradient(circle at 78% 18%, color-mix(in srgb, var(--primary) 28%, transparent), transparent 34%);
+
+  h2,
+  p {
+    margin: 0;
+  }
+
+  h2 {
+    max-width: 11ch;
+    color: var(--text-contrast);
+    font-size: clamp(2.4rem, 6vw, 4.7rem);
+    line-height: 0.95;
+  }
+
+  p:last-child {
+    max-width: 50ch;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.login-card {
+  display: grid;
+  align-content: center;
+  gap: 1.3rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: color-mix(in srgb, var(--surface-card) 88%, transparent);
+}
+
+.login-card__head {
+  display: grid;
+  gap: 0.55rem;
+
+  h1,
+  p {
+    margin: 0;
+  }
+
+  h1 {
+    color: var(--text-contrast);
+    font-size: 2rem;
+  }
+
+  p:last-child {
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+}
+
+.login-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.login-error {
+  margin: 0;
+  color: var(--danger-700);
+  font-weight: 700;
+}
+
+.login-submit {
+  min-height: 3.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, var(--primary), var(--dark));
+  color: var(--surface-solid);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  box-shadow: var(--shadow-lift);
+}
+
+.login-submit:disabled {
+  cursor: wait;
+  opacity: var(--opacity-disabled);
+}
+
+@media (max-width: 900px) {
+  .login-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .login-hero h2 {
+    max-width: none;
+  }
+}
