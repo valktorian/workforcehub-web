@@ -1,15 +1,14 @@
 ﻿<section class="dashboard-page">
   <div class="hero">
     <p class="eyebrow">Dashboard</p>
-    <h2>Workforce workspace, ready for the API.</h2>
+    <h2>Live workforce overview.</h2>
     <p class="lead">
-      The shell is now theme-aware, guarded by authentication, and prepared for profile-driven
-      workflows without exposing backend infrastructure in the client source.
+      Profile totals and approval queues are loaded from the WorkForceHub API.
     </p>
   </div>
 
   <div class="stats">
-    @for (item of stats; track item.label) {
+    @for (item of stats(); track item.label) {
       <article class="card stat-card" [class.tone-healthy]="item.tone === 'healthy'" [class.tone-warning]="item.tone === 'warning'" [class.tone-critical]="item.tone === 'critical'">
         <p class="card-label">{{ item.label }}</p>
         <strong>{{ item.value }}</strong>
@@ -20,20 +19,20 @@
 
   <section class="employee-preview card">
     <div class="section-heading">
-      <p class="eyebrow">On duty today</p>
-      <h3>Quick employee snapshot</h3>
+      <p class="eyebrow">Directory</p>
+      <h3>Recent employee snapshot</h3>
     </div>
 
     <ul class="employee-list">
-      @for (employee of employees; track employee.id) {
+      @for (employee of employees(); track employee.id) {
         <li class="employee-item">
           <div>
-            <strong class="employee-name">{{ employee.fullName }}</strong>
-            <p class="employee-role">{{ employee.role }} - {{ employee.team }}</p>
+            <strong class="employee-name">{{ displayName(employee) }}</strong>
+            <p class="employee-role">{{ employee.jobTitle || 'No job title' }} - {{ employee.department || 'No department' }}</p>
           </div>
-          <span class="employee-status">{{ employee.status }}</span>
+          <span class="employee-status">{{ employee.employmentStatus || 'No status' }}</span>
         </li>
-      }
+      } @empty { <li class="employee-item"><span>{{ loading() ? 'Loading employees...' : 'No profiles available.' }}</span></li> }
     </ul>
   </section>
 </section>
