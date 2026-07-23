@@ -15,23 +15,8 @@
     </div>
 
     <form class="login-form" [formGroup]="form" (ngSubmit)="submit()">
-      <mix-input
-        formControlName="email"
-        label="Email"
-        placeholder="name@company.com"
-        type="email"
-        autocomplete="email"
-        [required]="true"
-      />
-
-      <mix-input
-        formControlName="password"
-        label="Password"
-        placeholder="Enter your password"
-        type="password"
-        autocomplete="current-password"
-        [required]="true"
-      />
+      <label class="form-field">Email<input formControlName="email" placeholder="name@company.com" type="email" autocomplete="email" required /></label>
+      <label class="form-field">Password<input formControlName="password" placeholder="Enter your password" type="password" autocomplete="current-password" required /></label>
 
       @if (error()) {
         <p class="login-error">{{ error() }}</p>
@@ -41,7 +26,6 @@
         @if (submitting()) {
           Signing in...
         } @else {
-          <mix-icon name="arrow-right-to-bracket-solid-full" [size]="18" ariaLabel="Sign in" />
           Sign in
         }
       </button>
