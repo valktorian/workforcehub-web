@@ -1,27 +1,26 @@
-﻿import { httpResource } from '@angular/common/http';
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Icon, RoundButton } from 'mixology-ui';
-import { apiUrl, API_BASE_URL } from '../../core/api/api.config';
 import { AuthService } from '../../core/auth/auth.service';
-import { ProfileResponse, unwrapProfile } from '../../core/models/profile.model';
+import { SelfProfileResponse } from './models';
+import { ProfilePageService } from './services/profile-page.service';
 
 @Component({
   selector: 'app-profile-page',
   standalone: true,
-  imports: [RouterLink, Icon, RoundButton],
+  imports: [RouterLink],
   templateUrl: './profile-page.html',
   styleUrl: './profile-page.scss',
 })
-export class ProfilePage {
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+export class ProfilePage implements OnInit {
   private readonly authService = inject(AuthService);
+  private readonly service = inject(ProfilePageService);
 
+  protected readonly pictureUploading = signal(false);
+  protected readonly pictureError = signal<string | null>(null);
+  protected readonly loading = signal(true);
+  protected readonly loadError = signal<string | null>(null);
+  protected readonly profile = signal<SelfProfileResponse | null>(null);
   protected readonly user = this.authService.user;
-  protected readonly profileResource = httpResource<ProfileResponse>(() =>
-    apiUrl('/api/profiles/self', this.apiBaseUrl),
-  );
-  protected readonly profile = computed(() => unwrapProfile(this.profileResource.value()));
 
   protected readonly displayName = computed(() => {
     const profile = this.profile();
@@ -37,4 +36,38 @@ export class ProfilePage {
       .map((part) => part[0]?.toUpperCase())
       .join('') || 'P',
   );
+
+  ngOnInit(): void {
+    void this.loadProfile();
+  }
+
+  protected async uploadPicture(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || this.pictureUploading()) return;
+    this.pictureError.set(null);
+    this.pictureUploading.set(true);
+    try {
+      await this.service.uploadPicture(file);
+      await this.loadProfile();
+      input.value = '';
+    } catch {
+      this.pictureError.set('Unable to upload the profile picture.');
+    } finally {
+      this.pictureUploading.set(false);
+    }
+  }
+
+  private async loadProfile(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set(null);
+    try {
+      this.profile.set(await this.service.getSelf());
+    } catch {
+      this.profile.set(null);
+      this.loadError.set('Unable to load your profile.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
 }

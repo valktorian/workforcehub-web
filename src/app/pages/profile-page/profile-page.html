@@ -15,17 +15,22 @@
     </div>
 
     <a routerLink="/profile/details">
-      <mix-round-button>
-        <mix-icon name="edit" [size]="18" ariaLabel="Edit profile" />
-        Details
-      </mix-round-button>
+      <span class="profile-action">Edit details</span>
     </a>
+    <label class="picture-upload">
+      <span>{{ pictureUploading() ? 'Uploading...' : 'Change picture' }}</span>
+      <input type="file" accept="image/*" [disabled]="pictureUploading()" (change)="uploadPicture($event)" />
+    </label>
   </article>
 
-  @if (profileResource.isLoading()) {
+  @if (pictureError()) {
+    <p class="picture-error">{{ pictureError() }}</p>
+  }
+
+  @if (loading()) {
     <article class="card profile-state">Loading profile...</article>
-  } @else if (profileResource.error()) {
-    <article class="card profile-state">Unable to load your profile.</article>
+  } @else if (loadError()) {
+    <article class="card profile-state">{{ loadError() }}</article>
   } @else {
     <section class="profile-grid">
       <article class="card info-panel">
@@ -38,10 +43,6 @@
           <div>
             <dt>Role</dt>
             <dd>{{ user()?.role || '-' }}</dd>
-          </div>
-          <div>
-            <dt>Account ID</dt>
-            <dd>{{ user()?.accountId || '-' }}</dd>
           </div>
         </dl>
       </article>

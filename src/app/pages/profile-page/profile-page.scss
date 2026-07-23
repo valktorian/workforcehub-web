@@ -78,6 +78,21 @@ dl {
   text-decoration: none;
 }
 
+.profile-action { display: inline-flex; align-items: center; min-height: 2.5rem; padding: 0 0.9rem; border: 1px solid var(--border-soft); border-radius: 999px; color: var(--text-color); font-weight: 800; }
+
+.picture-upload {
+  display: grid;
+  place-items: center;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--border-muted);
+  border-radius: 0.7rem;
+  color: var(--text-color);
+  cursor: pointer;
+}
+
+.picture-upload input { display: none; }
+.picture-error { margin: 0; color: #ff9f9f; }
+
 .profile-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
