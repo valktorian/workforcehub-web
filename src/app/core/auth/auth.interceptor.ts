@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const token = inject(AuthService).token();
-  if (!token || !request.url.startsWith('/api/')) {
+  if (!token || !request.url.includes('/api/')) {
     return next(request);
   }
 

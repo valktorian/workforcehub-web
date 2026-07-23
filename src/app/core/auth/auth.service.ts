@@ -1,30 +1,11 @@
-﻿import { Injectable, computed, inject, signal } from '@angular/core';
-import { API_BASE_URL, apiUrl } from '../api/api.config';
-
-export interface AuthUser {
-  accountId: string;
-  email: string;
-  role: string;
-  expiresAt: string;
-}
-
-interface LoginResponse {
-  accessToken: string | null;
-  expiresAt: string;
-  accountId: string;
-  email: string | null;
-  role: string | null;
-}
-
-interface StoredSession extends AuthUser {
-  accessToken: string;
-}
+import { computed, Injectable, signal } from '@angular/core';
+import { AuthSession, AuthUser } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly apiBaseUrl = inject(API_BASE_URL);
   private readonly storageKey = 'workforcehub.session.v1';
-  private readonly session = signal<StoredSession | null>(this.readSession());
+  private readonly session = signal<AuthSession | null>(this.readSession());
+  private expirationTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly user = computed<AuthUser | null>(() => {
     const session = this.validSession();
@@ -41,29 +22,12 @@ export class AuthService {
   readonly token = computed(() => this.validSession()?.accessToken ?? null);
   readonly role = computed(() => this.user()?.role ?? null);
 
-  async login(email: string, password: string): Promise<void> {
-    const response = await fetch(apiUrl('/api/auth/login', this.apiBaseUrl), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+  constructor() {
+    this.scheduleExpiration(this.session());
+  }
 
-    if (!response.ok) {
-      throw new Error(await this.errorMessage(response));
-    }
-
-    const data = (await response.json()) as LoginResponse;
-    if (!data.accessToken || !data.email || !data.role) {
-      throw new Error('The login response did not include a valid session.');
-    }
-
-    this.setSession({
-      accessToken: data.accessToken,
-      accountId: data.accountId,
-      email: data.email,
-      role: data.role,
-      expiresAt: data.expiresAt,
-    });
+  startSession(session: AuthSession): void {
+    this.setSession(session);
   }
 
   logout(): void {
@@ -76,20 +40,15 @@ export class AuthService {
     return currentRole ? allowedRoles.includes(currentRole) : false;
   }
 
-  private validSession(): StoredSession | null {
+  private validSession(): AuthSession | null {
     const session = this.session();
     if (!session) return null;
-
-    if (new Date(session.expiresAt).getTime() <= Date.now()) {
-      this.setSession(null);
-      return null;
-    }
-
-    return session;
+    return new Date(session.expiresAt).getTime() > Date.now() ? session : null;
   }
 
-  private setSession(session: StoredSession | null): void {
+  private setSession(session: AuthSession | null): void {
     this.session.set(session);
+    this.scheduleExpiration(session);
     if (typeof window === 'undefined') return;
 
     if (session) {
@@ -100,24 +59,38 @@ export class AuthService {
     window.localStorage.removeItem(this.storageKey);
   }
 
-  private readSession(): StoredSession | null {
+  private readSession(): AuthSession | null {
     if (typeof window === 'undefined') return null;
 
     try {
       const raw = window.localStorage.getItem(this.storageKey);
-      return raw ? (JSON.parse(raw) as StoredSession) : null;
+      if (!raw) return null;
+
+      const session = JSON.parse(raw) as AuthSession;
+      if (new Date(session.expiresAt).getTime() > Date.now()) return session;
+
+      window.localStorage.removeItem(this.storageKey);
+      return null;
     } catch {
       window.localStorage.removeItem(this.storageKey);
       return null;
     }
   }
 
-  private async errorMessage(response: Response): Promise<string> {
-    try {
-      const problem = (await response.json()) as { detail?: string; title?: string };
-      return problem.detail || problem.title || 'Unable to sign in.';
-    } catch {
-      return 'Unable to sign in.';
+  private scheduleExpiration(session: AuthSession | null): void {
+    if (this.expirationTimer !== null) {
+      clearTimeout(this.expirationTimer);
+      this.expirationTimer = null;
     }
+
+    if (!session || typeof window === 'undefined') return;
+
+    const delay = new Date(session.expiresAt).getTime() - Date.now();
+    if (delay <= 0) return;
+
+    this.expirationTimer = setTimeout(
+      () => this.setSession(null),
+      Math.min(delay, 2_147_483_647),
+    );
   }
 }
