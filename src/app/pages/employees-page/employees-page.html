@@ -1,8 +1,62 @@
-﻿<section class="page-card">
-  <p class="eyebrow">Employees</p>
-  <h2>People directory</h2>
-  <p>
-    This route is protected for HR, managers, and admins. The next step can connect it to
-    <code>/api/profiles</code> with pagination and profile actions.
-  </p>
+<section class="employees-page">
+  <header class="page-head">
+    <div><p class="eyebrow">Profiles API</p><h2>People directory</h2><p>{{ totalCount() }} profiles</p></div>
+    <button type="button" class="primary" (click)="newProfile()">New profile</button>
+  </header>
+
+  @if (error()) { <p class="notice error">{{ error() }}</p> }
+  @if (message()) { <p class="notice success">{{ message() }}</p> }
+
+  <div class="workspace">
+    <aside class="directory card">
+      <div class="lookup">
+        <input type="search" placeholder="Search name, email, employee number..." aria-label="Search employees" (input)="updateSearch($event)" />
+      </div>
+      @if (loading()) { <p>Loading profiles...</p> }
+      <div class="profile-list">
+        @for (profile of filteredProfiles(); track profileId(profile)) {
+          <button type="button" class="profile-row" [class.active]="profile.id === selected()?.id" (click)="select(profile)">
+            <span class="employee-avatar" aria-hidden="true">
+              @if (profile.profilePictureUrl) { <img [src]="profile.profilePictureUrl" [alt]="displayName(profile)" /> } @else { {{ initials(profile) }} }
+            </span>
+            <span class="employee-copy"><strong>{{ displayName(profile) }}</strong><span>{{ profile.jobTitle || 'No job title' }} · {{ profile.department || 'No department' }}</span><small>{{ profile.employmentStatus || 'No status' }}</small></span>
+          </button>
+        } @empty { @if (!loading()) { <p>No profiles found.</p> } }
+      </div>
+      <nav class="pagination" aria-label="Profile pages">
+        <button type="button" [disabled]="pageNumber() <= 1" (click)="load(pageNumber() - 1)">Previous</button>
+        <span>{{ pageNumber() }} / {{ totalPages() }}</span>
+        <button type="button" [disabled]="pageNumber() >= totalPages()" (click)="load(pageNumber() + 1)">Next</button>
+      </nav>
+    </aside>
+
+    <main class="editor card">
+      <div class="editor-head"><div class="editor-identity">@if (selected()) { <span class="employee-avatar employee-avatar--large" aria-hidden="true">@if (selected()!.profilePictureUrl) { <img [src]="selected()!.profilePictureUrl" [alt]="displayName(selected()!)" /> } @else { {{ initials(selected()!) }} }</span> }<div><p class="eyebrow">{{ selected() ? 'Edit profile' : 'Create profile' }}</p><h3>{{ selected() ? displayName(selected()!) : 'New employee' }}</h3></div></div>@if (selected()) { <button type="button" class="danger" (click)="remove()">Delete</button> }</div>
+      <form class="profile-form" [formGroup]="form" (ngSubmit)="save()">
+        <label>Employee number<input formControlName="employeeNumber" /></label>
+        <label>First name<input formControlName="firstName" required /></label>
+        <label>Last name<input formControlName="lastName" required /></label>
+        <label>Work email<input type="email" formControlName="workEmail" /></label>
+        <label>Personal email<input type="email" formControlName="personalEmail" /></label>
+        <label>Phone<input formControlName="phoneNumber" /></label>
+        <label class="wide">Address<textarea formControlName="address" rows="2"></textarea></label>
+        <label>Date of birth<input type="date" formControlName="dateOfBirth" /></label>
+        <label>Job title<input formControlName="jobTitle" /></label>
+        <label>Department<input formControlName="department" /></label>
+        <label>Employment type<input formControlName="employmentType" placeholder="Full-time" /></label>
+        <label>Hire date<input type="date" formControlName="hireDate" required /></label>
+        <label>Organization role<select formControlName="organizationRole"><option value="">Not assigned</option>@if (selected()?.organizationRole && !isKnownOrganizationRole(selected()!.organizationRole)) { <option [value]="selected()!.organizationRole">{{ selected()!.organizationRole }}</option> }@for (role of organizationRoles; track role) { <option [value]="role">{{ role }}</option> }</select></label>
+        <label>Status<select formControlName="employmentStatus">@for (status of employmentStatuses; track status) { <option [value]="status">{{ status === 'OnLeave' ? 'On leave' : status }}</option> }</select></label>
+        @if (!selected()) { <label class="wide">Create with picture<input type="file" accept="image/*" (change)="onCreatePicture($event)" /></label> }
+        <div class="actions wide"><button class="primary" type="submit" [disabled]="saving()">{{ saving() ? 'Saving...' : selected() ? 'Update full profile' : 'Create profile' }}</button>@if (selected()) { <button type="button" (click)="saveEmployment()">Update employment only</button> }</div>
+      </form>
+
+      @if (selected()) {
+        <section class="quick-actions">
+          <form [formGroup]="statusForm" (ngSubmit)="saveStatus()"><h4>Employment status</h4><select formControlName="employmentStatus">@for (status of employmentStatuses; track status) { <option [value]="status">{{ status === 'OnLeave' ? 'On leave' : status }}</option> }</select><button type="submit">Update status</button></form>
+          <div><h4>Profile picture</h4><input type="file" accept="image/*" (change)="onProfilePicture($event)" /><button type="button" [disabled]="!profilePicture" (click)="uploadPicture()">Upload picture</button></div>
+        </section>
+      }
+    </main>
+  </div>
 </section>
