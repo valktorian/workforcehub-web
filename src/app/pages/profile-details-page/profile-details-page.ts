@@ -1,31 +1,28 @@
-﻿import { httpResource } from '@angular/common/http';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AppInput, Icon, RoundButton } from 'mixology-ui';
-import { apiUrl, API_BASE_URL } from '../../core/api/api.config';
 import { AuthService } from '../../core/auth/auth.service';
-import { ProfileResponse, unwrapProfile } from '../../core/models/profile.model';
+import { ProfileDetailsResponse } from './models';
+import { ProfileDetailsPageService } from './services/profile-details-page.service';
 
 @Component({
   selector: 'app-profile-details-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, AppInput, Icon, RoundButton],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './profile-details-page.html',
   styleUrl: './profile-details-page.scss',
 })
-export class ProfileDetailsPage {
-  private readonly apiBaseUrl = inject(API_BASE_URL);
+export class ProfileDetailsPage implements OnInit {
   private readonly authService = inject(AuthService);
+  private readonly service = inject(ProfileDetailsPageService);
   private readonly fb = inject(NonNullableFormBuilder);
 
   protected readonly error = signal<string | null>(null);
   protected readonly saving = signal(false);
+  protected readonly loading = signal(true);
+  protected readonly loadError = signal<string | null>(null);
+  protected readonly profile = signal<ProfileDetailsResponse | null>(null);
   protected readonly user = this.authService.user;
-  protected readonly profileResource = httpResource<ProfileResponse>(() =>
-    apiUrl('/api/profiles/self', this.apiBaseUrl),
-  );
-  protected readonly profile = computed(() => unwrapProfile(this.profileResource.value()));
 
   protected readonly form = this.fb.group({
     personalEmail: ['', [Validators.email]],
@@ -48,59 +45,57 @@ export class ProfileDetailsPage {
     ] as const;
   });
 
-  constructor() {
-    effect(() => {
-      const profile = this.profile();
-      if (!profile) return;
-
-      this.form.patchValue(
-        {
-          personalEmail: profile.personalEmail ?? '',
-          phoneNumber: profile.phoneNumber ?? '',
-          address: profile.address ?? '',
-          dateOfBirth: this.toDateInput(profile.dateOfBirth),
-        },
-        { emitEvent: false },
-      );
-    });
+  ngOnInit(): void {
+    void this.loadProfile();
   }
 
   protected async save(): Promise<void> {
     this.form.markAllAsTouched();
     this.error.set(null);
     if (this.form.invalid || this.saving()) return;
-
     const user = this.user();
-    const token = this.authService.token();
-    if (!user || !token) return;
+    if (!user) return;
 
     this.saving.set(true);
     try {
       const value = this.form.getRawValue();
-      const response = await fetch(apiUrl('/api/profiles/self/personal-info', this.apiBaseUrl), {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          accountId: user.accountId,
-          personalEmail: value.personalEmail || null,
-          phoneNumber: value.phoneNumber || null,
-          address: value.address || null,
-          dateOfBirth: value.dateOfBirth ? new Date(value.dateOfBirth).toISOString() : null,
-        }),
+      await this.service.updatePersonalInfo({
+        accountId: user.accountId,
+        personalEmail: value.personalEmail || null,
+        phoneNumber: value.phoneNumber || null,
+        address: value.address || null,
+        dateOfBirth: value.dateOfBirth ? new Date(value.dateOfBirth).toISOString() : null,
       });
-
-      if (!response.ok) {
-        throw new Error(await this.errorMessage(response));
-      }
-
-      this.profileResource.reload();
+      await this.loadProfile();
     } catch (error) {
       this.error.set(error instanceof Error ? error.message : 'Unable to update profile.');
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  private async loadProfile(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set(null);
+    try {
+      const profile = await this.service.getSelf();
+      this.profile.set(profile);
+      if (profile) {
+        this.form.patchValue(
+          {
+            personalEmail: profile.personalEmail ?? '',
+            phoneNumber: profile.phoneNumber ?? '',
+            address: profile.address ?? '',
+            dateOfBirth: this.toDateInput(profile.dateOfBirth),
+          },
+          { emitEvent: false },
+        );
+      }
+    } catch {
+      this.profile.set(null);
+      this.loadError.set('Unable to load profile details.');
+    } finally {
+      this.loading.set(false);
     }
   }
 
@@ -110,16 +105,6 @@ export class ProfileDetailsPage {
   }
 
   private toDateInput(value: string | null | undefined): string {
-    if (!value) return '';
-    return new Date(value).toISOString().slice(0, 10);
-  }
-
-  private async errorMessage(response: Response): Promise<string> {
-    try {
-      const problem = (await response.json()) as { detail?: string; title?: string };
-      return problem.detail || problem.title || 'Unable to update profile.';
-    } catch {
-      return 'Unable to update profile.';
-    }
+    return value ? new Date(value).toISOString().slice(0, 10) : '';
   }
 }

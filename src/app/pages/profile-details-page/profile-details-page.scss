@@ -19,6 +19,8 @@
   text-decoration: none;
 }
 
+.back-button { display: inline-flex; align-items: center; min-height: 2.5rem; padding: 0 0.9rem; border: 1px solid var(--border-soft); border-radius: 999px; color: var(--text-color); font-weight: 800; }
+
 .details-head div {
   display: grid;
   gap: 0.4rem;
@@ -73,6 +75,9 @@
   display: grid;
   gap: 1rem;
 }
+
+.form-field { display: grid; gap: 0.4rem; color: var(--text-dim); font-size: 0.85rem; font-weight: 800; }
+.form-field input, .form-field textarea { width: 100%; box-sizing: border-box; padding: 0.8rem 0.85rem; border: 1px solid var(--border-muted); border-radius: 0.7rem; background: var(--surface-overlay); color: var(--text-color); font: inherit; }
 
 .details-error {
   margin: 0;
