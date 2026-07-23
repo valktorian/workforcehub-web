@@ -11,6 +11,11 @@ export const routes: Routes = [
   },
   {
     path: '',
+    pathMatch: 'full',
+    redirectTo: 'login',
+  },
+  {
+    path: 'dashboard',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./pages/dashboard-page/dashboard-page').then((m) => m.DashboardPage),
@@ -28,8 +33,7 @@ export const routes: Routes = [
   },
   {
     path: 'employees',
-    canActivate: [authGuard, roleGuard],
-    data: { roles: ['Admin', 'HR', 'Manager'] },
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./pages/employees-page/employees-page').then((m) => m.EmployeesPage),
   },
@@ -48,6 +52,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: '',
+    redirectTo: 'login',
   },
 ];

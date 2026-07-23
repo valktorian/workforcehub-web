@@ -1,6 +1,6 @@
 ﻿import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { Icon, RoundButton, ThemeService } from 'mixology-ui';
+import { ThemeService } from '../../node_modules/mixology-ui/src/lib/services/theme.service';
 import { AuthService } from './core/auth/auth.service';
 
 type AppTheme = 'default' | 'moon' | 'night-meteor';
@@ -15,7 +15,8 @@ type NavigationItem = {
 
 @Component({
   selector: 'app-root',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, Icon, RoundButton],
+  standalone: true,
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
@@ -36,7 +37,7 @@ export class App {
 
   private readonly allNavigationItems: NavigationItem[] = [
     {
-      path: '/',
+      path: '/dashboard',
       label: 'Dashboard',
       hint: 'App overview and key metrics',
       icon: 'dashboard',
