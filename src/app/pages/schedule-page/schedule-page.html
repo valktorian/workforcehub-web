@@ -1,8 +1,200 @@
-﻿<section class="page-card">
-  <p class="eyebrow">Schedule</p>
-  <h2>Shift planning workspace</h2>
-  <p>
-    This placeholder stays intentionally light for now. It is protected, theme-aware, and ready for
-    scheduling API work later.
-  </p>
+<header class="page-header">
+  <div>
+    <p class="eyebrow">Time management</p>
+    <h2>My schedule</h2>
+    <p>Plan work, request leave, and keep your timesheets current.</p>
+  </div>
+  <div class="header-actions">
+    <button class="leave-request-button" type="button" (click)="openLeaveRequestForm()">
+      <span aria-hidden="true">+</span>
+      Nouvelle demande de congé
+    </button>
+    <div class="metrics">
+      <article><span>Heures affichées</span><strong>{{ totalHours() | number: '1.0-1' }}h</strong></article>
+      <article><span>Feuilles de temps</span><strong>{{ timesheets().length }}</strong></article>
+    </div>
+  </div>
+</header>
+
+@if (error()) {
+  <p class="alert">{{ error() }}</p>
+}
+
+<section class="schedule-layout">
+  <div class="calendar-card">
+    @if (loading()) {
+      <div class="loading">Loading schedule…</div>
+    }
+    <full-calendar [options]="calendarOptions" />
+  </div>
+
+  <aside>
+    @if (canApproveLeave()) {
+      <section class="side-card approvals-card">
+        <div class="card-heading">
+          <h3>Demandes à valider</h3>
+          <span class="count-badge">{{ pendingLeaveRequests().length }}</span>
+        </div>
+        @for (request of pendingLeaveRequests(); track request.id) {
+          <article class="approval">
+            <strong>{{ request.leaveType }}</strong>
+            <span>{{ request.startDate | date: 'dd/MM/yyyy' }} – {{ request.endDate | date: 'dd/MM/yyyy' }}</span>
+            <small>Employé {{ request.employeeId.slice(0, 8) }}</small>
+            @if (request.reason) {
+              <p>{{ request.reason }}</p>
+            }
+            <div class="review-actions">
+              <button class="reject-button" type="button" (click)="openReview(request, 'reject')">Refuser</button>
+              <button class="approve-button" type="button" (click)="openReview(request, 'approve')">Approuver</button>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted">Aucune demande en attente.</p>
+        }
+      </section>
+    }
+
+    <section class="side-card">
+      <h3>Leave balance</h3>
+      @for (balance of balances(); track balance.leaveType) {
+        <div class="balance">
+          <span>{{ balance.leaveType }}</span>
+          <strong>{{ balance.available }} days</strong>
+          <small>{{ balance.pending }} pending</small>
+        </div>
+      } @empty {
+        <p class="muted">No leave balance available.</p>
+      }
+    </section>
+
+    <section class="side-card">
+      <h3>Timesheets</h3>
+      @for (sheet of timesheets(); track sheet.id) {
+        <div class="sheet">
+          <div>
+            <strong>{{ sheet.periodStart | date: 'MMM d' }} – {{ sheet.periodEnd | date: 'MMM d' }}</strong>
+            <span>{{ sheet.totalHours }}h · {{ sheet.status }}</span>
+          </div>
+          @if (sheet.status.toLowerCase() === 'draft') {
+            <button type="button" (click)="submitTimesheet(sheet)">Submit</button>
+          }
+        </div>
+      } @empty {
+        <p class="muted">No timesheets in this period.</p>
+      }
+    </section>
+  </aside>
 </section>
+
+<div class="legend">
+  <span class="work">Work entry</span>
+  <span class="leave">Leave</span>
+  <span class="holiday">Holiday</span>
+  <small>Cliquez sur un créneau horaire pour saisir du temps de travail.</small>
+</div>
+
+@if (editor()) {
+  <div class="modal-backdrop" (click)="closeEditor()">
+    <section class="modal" (click)="$event.stopPropagation()">
+      <button class="close" type="button" (click)="closeEditor()" aria-label="Close">×</button>
+
+      @if (editor() === 'time') {
+        <p class="eyebrow">Work entry</p>
+        <h3>{{ selectedEntry() ? 'Edit time entry' : 'Log working time' }}</h3>
+        <form (ngSubmit)="saveTimeEntry()">
+          <label>Date<input type="date" name="workDate" [(ngModel)]="timeForm.workDate" required /></label>
+          <div class="row">
+            <label>Start<input type="time" name="startTime" [(ngModel)]="timeForm.startTime" required /></label>
+            <label>End<input type="time" name="endTime" [(ngModel)]="timeForm.endTime" required /></label>
+          </div>
+          <div class="row">
+            <label>Project<input name="projectCode" [(ngModel)]="timeForm.projectCode" required /></label>
+            <label>Task<input name="taskCode" [(ngModel)]="timeForm.taskCode" required /></label>
+          </div>
+          <label>Notes<textarea name="notes" [(ngModel)]="timeForm.notes" rows="3"></textarea></label>
+          <div class="actions">
+            @if (selectedEntry()) {
+              <button class="danger" type="button" (click)="requestDeleteTimeEntry()">Supprimer</button>
+            }
+            <button class="primary" type="submit" [disabled]="saving()">Save entry</button>
+          </div>
+        </form>
+      } @else {
+        <p class="eyebrow">Demande de congé</p>
+        <h3>Nouvelle demande de congé</h3>
+        <form (ngSubmit)="saveLeaveRequest()">
+          <label>
+            Type de congé
+            <select name="leaveType" [(ngModel)]="leaveForm.leaveType" required>
+              @for (type of leaveTypes(); track type.code) {
+                <option [value]="type.code">{{ type.name }}</option>
+              }
+            </select>
+          </label>
+          <div class="row">
+            <label>Du<input type="date" name="startDate" [(ngModel)]="leaveForm.startDate" required /></label>
+            <label>Au<input type="date" name="endDate" [(ngModel)]="leaveForm.endDate" required /></label>
+          </div>
+          <label>Motif<textarea name="reason" [(ngModel)]="leaveForm.reason" rows="3" placeholder="Ajoutez un commentaire si nécessaire"></textarea></label>
+          <div class="actions">
+            <button type="button" (click)="closeEditor()">Annuler</button>
+            <button class="primary" type="submit" [disabled]="saving()">
+              {{ saving() ? 'Envoi…' : 'Envoyer la demande' }}
+            </button>
+          </div>
+        </form>
+      }
+    </section>
+  </div>
+}
+
+@if (confirmingDelete()) {
+  <div class="modal-backdrop confirmation-backdrop" (click)="cancelDeleteTimeEntry()">
+    <section class="modal confirmation-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-title" (click)="$event.stopPropagation()">
+      <span class="warning-icon" aria-hidden="true">!</span>
+      <div>
+        <p class="eyebrow">Confirmation</p>
+        <h3 id="delete-title">Supprimer cette saisie de temps ?</h3>
+        <p class="confirmation-copy">Cette action est définitive et la saisie disparaîtra du calendrier.</p>
+      </div>
+      <div class="actions">
+        <button type="button" (click)="cancelDeleteTimeEntry()">Annuler</button>
+        <button class="delete-confirm" type="button" [disabled]="saving()" (click)="deleteTimeEntry()">
+          {{ saving() ? 'Suppression…' : 'Supprimer' }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (reviewRequest(); as request) {
+  <div class="modal-backdrop confirmation-backdrop" (click)="closeReview()">
+    <section class="modal review-modal" role="dialog" aria-modal="true" aria-labelledby="review-title" (click)="$event.stopPropagation()">
+      <button class="close" type="button" (click)="closeReview()" aria-label="Fermer">×</button>
+      <p class="eyebrow">Validation de congé</p>
+      <h3 id="review-title">
+        {{ reviewDecision() === 'approve' ? 'Approuver' : 'Refuser' }} cette demande ?
+      </h3>
+      <div class="review-summary">
+        <strong>{{ request.leaveType }}</strong>
+        <span>{{ request.startDate | date: 'dd/MM/yyyy' }} – {{ request.endDate | date: 'dd/MM/yyyy' }}</span>
+      </div>
+      <label>
+        Commentaire
+        <textarea name="reviewComment" [(ngModel)]="reviewComment" rows="3" placeholder="Commentaire facultatif"></textarea>
+      </label>
+      <div class="actions">
+        <button type="button" (click)="closeReview()">Annuler</button>
+        <button
+          type="button"
+          [class.approve-button]="reviewDecision() === 'approve'"
+          [class.reject-confirm]="reviewDecision() === 'reject'"
+          [disabled]="saving()"
+          (click)="confirmReview()"
+        >
+          {{ saving() ? 'Enregistrement…' : (reviewDecision() === 'approve' ? 'Approuver' : 'Refuser') }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
