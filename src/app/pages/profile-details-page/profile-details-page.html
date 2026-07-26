@@ -33,21 +33,54 @@
       </article>
 
       <article class="card edit-panel">
-        <h3>Personal information</h3>
-        <form class="profile-form" [formGroup]="form" (ngSubmit)="save()">
-          <label class="form-field">Personal email<input formControlName="personalEmail" placeholder="personal@example.com" type="email" autocomplete="email" /></label>
-          <label class="form-field">Phone<input formControlName="phoneNumber" placeholder="+33 ..." autocomplete="tel" /></label>
-          <label class="form-field">Address<textarea formControlName="address" placeholder="Home address" rows="3"></textarea></label>
-          <label class="form-field">Date of birth<input formControlName="dateOfBirth" type="date" /></label>
-
-          @if (error()) {
-            <p class="details-error">{{ error() }}</p>
+        <div class="panel-heading">
+          <div>
+            <p class="section-label">Private details</p>
+            <h3>Personal information</h3>
+          </div>
+          @if (!editing()) {
+            <button class="edit-button" type="button" (click)="startEditing()">Edit</button>
           }
+        </div>
 
-          <button class="save-button" type="submit" [disabled]="saving()">
-            {{ saving() ? 'Saving...' : 'Save changes' }}
-          </button>
-        </form>
+        @if (editing()) {
+          <form class="profile-form" [formGroup]="form" (ngSubmit)="save()">
+            <label class="form-field">Personal email<input formControlName="personalEmail" placeholder="personal@example.com" type="email" autocomplete="email" /></label>
+            <label class="form-field">Phone<input formControlName="phoneNumber" placeholder="+33 ..." autocomplete="tel" /></label>
+            <label class="form-field">Address<textarea formControlName="address" placeholder="Home address" rows="3"></textarea></label>
+            <label class="form-field">Date of birth<input formControlName="dateOfBirth" type="date" /></label>
+
+            @if (error()) {
+              <p class="details-error">{{ error() }}</p>
+            }
+
+            <div class="form-actions">
+              <button class="cancel-button" type="button" [disabled]="saving()" (click)="cancelEditing()">Cancel</button>
+              <button class="save-button" type="submit" [disabled]="saving()">
+                {{ saving() ? 'Saving...' : 'Save changes' }}
+              </button>
+            </div>
+          </form>
+        } @else {
+          <dl class="personal-details">
+            <div>
+              <dt>Personal email</dt>
+              <dd>{{ profile()?.personalEmail || 'Not provided' }}</dd>
+            </div>
+            <div>
+              <dt>Phone</dt>
+              <dd>{{ profile()?.phoneNumber || 'Not provided' }}</dd>
+            </div>
+            <div>
+              <dt>Address</dt>
+              <dd>{{ profile()?.address || 'Not provided' }}</dd>
+            </div>
+            <div>
+              <dt>Date of birth</dt>
+              <dd>{{ profile()?.dateOfBirth ? (profile()?.dateOfBirth | date: 'mediumDate') : 'Not provided' }}</dd>
+            </div>
+          </dl>
+        }
       </article>
     </section>
   }

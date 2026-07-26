@@ -106,14 +106,46 @@ export class SchedulePage {
 
   protected async saveTimeEntry(): Promise<void> {
     if (!this.employeeId) return this.fail('Your employee profile could not be resolved.');
+    if (!this.timeForm.projectCode.trim() || !this.timeForm.taskCode.trim()) {
+      return this.fail('Project and task are required.');
+    }
     this.saving.set(true);
     try {
       const request = { employeeId: this.employeeId, ...this.timeForm };
       const selected = this.selectedEntry();
-      if (selected) await this.service.updateTimeEntry(selected.id, request);
-      else await this.service.createTimeEntry(request);
+      if (selected) {
+        await this.service.updateTimeEntry(selected.id, request);
+        await this.reload();
+      } else {
+        const result = await this.service.createTimeEntry(request);
+        const created: TimeEntry = {
+          id: result.id,
+          employeeId: request.employeeId,
+          workDate: request.workDate,
+          startTime: request.startTime,
+          endTime: request.endTime,
+          hours: this.durationInHours(request.startTime, request.endTime),
+          projectCode: request.projectCode,
+          taskCode: request.taskCode,
+          notes: request.notes,
+          status: result.status,
+        };
+        this.entries.update((entries) => [...entries, created]);
+        if (Array.isArray(this.calendarOptions.events)) {
+          this.calendarOptions.events = [
+            ...this.calendarOptions.events,
+            {
+              id: created.id,
+              title: `${created.projectCode} · ${created.hours}h`,
+              start: `${this.dateOnly(created.workDate)}T${created.startTime}`,
+              end: `${this.dateOnly(created.workDate)}T${created.endTime}`,
+              classNames: ['event-work'],
+              extendedProps: { kind: 'time', item: created },
+            },
+          ];
+        }
+      }
       this.closeEditor();
-      await this.reload();
     } catch {
       this.fail('Unable to save the time entry.');
     } finally {
@@ -127,8 +159,13 @@ export class SchedulePage {
     this.saving.set(true);
     try {
       await this.service.deleteTimeEntry(entry.id);
+      this.entries.update((entries) => entries.filter((item) => item.id !== entry.id));
+      if (Array.isArray(this.calendarOptions.events)) {
+        this.calendarOptions.events = this.calendarOptions.events.filter(
+          (event) => event.id !== entry.id,
+        );
+      }
       this.closeEditor();
-      await this.reload();
     } catch {
       this.confirmingDelete.set(false);
       this.fail('Unable to delete the time entry.');
@@ -185,9 +222,10 @@ export class SchedulePage {
         this.reviewDecision(),
         this.reviewComment,
       );
+      this.pendingLeaveRequests.update((requests) =>
+        requests.filter((item) => item.id !== request.id),
+      );
       this.closeReview();
-      await this.loadPendingApprovals();
-      await this.reload();
     } catch {
       this.fail("La décision n'a pas pu être enregistrée.");
     } finally {
@@ -290,6 +328,12 @@ export class SchedulePage {
     const date = new Date(value);
     date.setDate(date.getDate() + 1);
     return this.dateOnly(date);
+  }
+
+  private durationInHours(startTime: string, endTime: string): number {
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+    return (endHour * 60 + endMinute - startHour * 60 - startMinute) / 60;
   }
 
   private fail(message: string): void {

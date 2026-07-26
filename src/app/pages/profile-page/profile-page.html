@@ -19,7 +19,7 @@
     </a>
     <label class="picture-upload">
       <span>{{ pictureUploading() ? 'Uploading...' : 'Change picture' }}</span>
-      <input type="file" accept="image/*" [disabled]="pictureUploading()" (change)="uploadPicture($event)" />
+      <input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" [disabled]="pictureUploading()" (change)="uploadPicture($event)" />
     </label>
   </article>
 

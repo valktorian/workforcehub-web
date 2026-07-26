@@ -39,6 +39,7 @@ export class EmployeesPage implements OnInit {
     );
   });
   protected readonly selected = signal<EmployeeProfileResponse | null>(null);
+  protected readonly editing = signal(false);
   protected readonly loading = signal(false);
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -95,6 +96,7 @@ export class EmployeesPage implements OnInit {
 
   protected newProfile(): void {
     this.selected.set(null);
+    this.editing.set(true);
     this.form.reset({ employmentStatus: 'Active' });
     this.createPicture = null;
     this.clearFeedback();
@@ -102,6 +104,7 @@ export class EmployeesPage implements OnInit {
 
   protected edit(profile: EmployeeProfileResponse): void {
     this.selected.set(profile);
+    this.editing.set(false);
     this.form.reset({
       employeeNumber: profile.employeeNumber ?? '',
       firstName: profile.firstName ?? '',
@@ -122,6 +125,16 @@ export class EmployeesPage implements OnInit {
     this.clearFeedback();
   }
 
+  protected startEditing(): void {
+    this.editing.set(true);
+    this.clearFeedback();
+  }
+
+  protected cancelEditing(): void {
+    const profile = this.selected();
+    if (profile) this.edit(profile);
+  }
+
   protected async save(): Promise<void> {
     this.form.markAllAsTouched();
     if (this.form.invalid || this.saving()) return;
@@ -129,14 +142,17 @@ export class EmployeesPage implements OnInit {
     const id = selected ? this.profileId(selected) : null;
     await this.run(async () => {
       if (id) {
-        await this.service.update(id, this.updateRequest(id));
+        const updated = await this.service.update(id, this.updateRequest(id));
+        this.replaceProfile(updated);
+        this.edit(updated);
         this.message.set('Profile updated.');
       } else {
-        await this.service.create(this.createRequest(), this.createPicture ?? undefined);
-        this.message.set('Profile created.');
+        const created = await this.service.create(this.createRequest(), this.createPicture ?? undefined);
         this.newProfile();
+        this.profiles.update((profiles) => [created, ...profiles].slice(0, this.pageSize));
+        this.totalCount.update((count) => count + 1);
+        this.message.set('Profile created.');
       }
-      await this.load();
     }, false, true);
   }
 
@@ -144,9 +160,10 @@ export class EmployeesPage implements OnInit {
     const id = this.selectedId();
     if (!id) return;
     await this.run(async () => {
-      await this.service.updateEmployment(id, this.employmentRequest(id));
+      const updated = await this.service.updateEmployment(id, this.employmentRequest(id));
+      this.replaceProfile(updated);
+      this.edit(updated);
       this.message.set('Employment details updated.');
-      await this.refreshSelected(id);
     }, false, true);
   }
 
@@ -154,12 +171,13 @@ export class EmployeesPage implements OnInit {
     const id = this.selectedId();
     if (!id) return;
     await this.run(async () => {
-      await this.service.updateStatus(id, {
+      const updated = await this.service.updateStatus(id, {
         profileId: id,
         employmentStatus: this.statusForm.getRawValue().employmentStatus,
       });
+      this.replaceProfile(updated);
+      this.edit(updated);
       this.message.set('Employment status updated.');
-      await this.refreshSelected(id);
     }, false, true);
   }
 
@@ -167,10 +185,11 @@ export class EmployeesPage implements OnInit {
     const id = this.selectedId();
     if (!id || !this.profilePicture) return;
     await this.run(async () => {
-      await this.service.uploadPicture(id, this.profilePicture!);
+      const updated = await this.service.uploadPicture(id, this.profilePicture!);
       this.profilePicture = null;
+      this.replaceProfile(updated);
+      this.edit(updated);
       this.message.set('Profile picture uploaded.');
-      await this.refreshSelected(id);
     }, false, true);
   }
 
@@ -183,18 +202,21 @@ export class EmployeesPage implements OnInit {
     if (!id || !window.confirm('Delete this profile permanently?')) return;
     await this.run(async () => {
       await this.service.delete(id);
+      this.profiles.update((profiles) => profiles.filter((profile) => profile.id !== id));
+      this.totalCount.update((count) => Math.max(0, count - 1));
       this.newProfile();
       this.message.set('Profile deleted.');
-      await this.load();
     }, false, true);
   }
 
   protected onCreatePicture(event: Event): void {
-    this.createPicture = (event.target as HTMLInputElement).files?.[0] ?? null;
+    const input = event.target as HTMLInputElement;
+    this.createPicture = this.validImage(input);
   }
 
   protected onProfilePicture(event: Event): void {
-    this.profilePicture = (event.target as HTMLInputElement).files?.[0] ?? null;
+    const input = event.target as HTMLInputElement;
+    this.profilePicture = this.validImage(input);
   }
 
   protected profileId(profile: EmployeeProfileResponse): string {
@@ -222,6 +244,18 @@ export class EmployeesPage implements OnInit {
   private selectedId(): string | null {
     const profile = this.selected();
     return profile ? this.profileId(profile) : null;
+  }
+
+  private validImage(input: HTMLInputElement): File | null {
+    const file = input.files?.[0] ?? null;
+    if (file && !['image/jpeg', 'image/png'].includes(file.type)) {
+      this.error.set('Only JPG, JPEG, and PNG images are supported.');
+      input.value = '';
+      return null;
+    }
+
+    this.error.set(null);
+    return file;
   }
 
   private createRequest(): CreateEmployeeRequest {
@@ -281,10 +315,10 @@ export class EmployeesPage implements OnInit {
     };
   }
 
-  private async refreshSelected(id: string): Promise<void> {
-    const profile = await this.service.getById(id);
-    this.edit(profile);
-    await this.load();
+  private replaceProfile(updated: EmployeeProfileResponse): void {
+    this.profiles.update((profiles) =>
+      profiles.map((profile) => profile.id === updated.id ? updated : profile),
+    );
   }
 
   private async run(action: () => Promise<void>, loading = false, saving = false): Promise<void> {

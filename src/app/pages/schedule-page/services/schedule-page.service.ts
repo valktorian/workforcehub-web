@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL, apiUrl } from '../../../core/api/api.config';
 import {
   ApiResponse,
+  CommandAcceptedResponse,
   CreateLeaveRequestRequest,
   CreateTimeEntryRequest,
   Holiday,
@@ -41,8 +42,13 @@ export class SchedulePageService {
     return this.get<{ id: string }>('/api/profiles/self').then((profile) => profile.id);
   }
 
-  createTimeEntry(request: CreateTimeEntryRequest): Promise<unknown> {
-    return firstValueFrom(this.http.post(apiUrl('/api/time-entries', this.baseUrl), request));
+  createTimeEntry(request: CreateTimeEntryRequest): Promise<CommandAcceptedResponse> {
+    return firstValueFrom(
+      this.http.post<CommandAcceptedResponse>(
+        apiUrl('/api/time-entries', this.baseUrl),
+        request,
+      ),
+    );
   }
 
   updateTimeEntry(id: string, request: CreateTimeEntryRequest): Promise<unknown> {

@@ -101,7 +101,7 @@
       @if (editor() === 'time') {
         <p class="eyebrow">Work entry</p>
         <h3>{{ selectedEntry() ? 'Edit time entry' : 'Log working time' }}</h3>
-        <form (ngSubmit)="saveTimeEntry()">
+        <form #timeEntryForm="ngForm" (ngSubmit)="saveTimeEntry()">
           <label>Date<input type="date" name="workDate" [(ngModel)]="timeForm.workDate" required /></label>
           <div class="row">
             <label>Start<input type="time" name="startTime" [(ngModel)]="timeForm.startTime" required /></label>
@@ -116,7 +116,7 @@
             @if (selectedEntry()) {
               <button class="danger" type="button" (click)="requestDeleteTimeEntry()">Supprimer</button>
             }
-            <button class="primary" type="submit" [disabled]="saving()">Save entry</button>
+            <button class="primary" type="submit" [disabled]="saving() || timeEntryForm.invalid">Save entry</button>
           </div>
         </form>
       } @else {

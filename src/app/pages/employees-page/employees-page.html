@@ -31,31 +31,75 @@
     </aside>
 
     <main class="editor card">
-      <div class="editor-head"><div class="editor-identity">@if (selected()) { <span class="employee-avatar employee-avatar--large" aria-hidden="true">@if (selected()!.profilePictureUrl) { <img [src]="selected()!.profilePictureUrl" [alt]="displayName(selected()!)" /> } @else { {{ initials(selected()!) }} }</span> }<div><p class="eyebrow">{{ selected() ? 'Edit profile' : 'Create profile' }}</p><h3>{{ selected() ? displayName(selected()!) : 'New employee' }}</h3></div></div>@if (selected()) { <button type="button" class="danger" (click)="remove()">Delete</button> }</div>
-      <form class="profile-form" [formGroup]="form" (ngSubmit)="save()">
-        <label>Employee number<input formControlName="employeeNumber" /></label>
-        <label>First name<input formControlName="firstName" required /></label>
-        <label>Last name<input formControlName="lastName" required /></label>
-        <label>Work email<input type="email" formControlName="workEmail" /></label>
-        <label>Personal email<input type="email" formControlName="personalEmail" /></label>
-        <label>Phone<input formControlName="phoneNumber" /></label>
-        <label class="wide">Address<textarea formControlName="address" rows="2"></textarea></label>
-        <label>Date of birth<input type="date" formControlName="dateOfBirth" /></label>
-        <label>Job title<input formControlName="jobTitle" /></label>
-        <label>Department<input formControlName="department" /></label>
-        <label>Employment type<input formControlName="employmentType" placeholder="Full-time" /></label>
-        <label>Hire date<input type="date" formControlName="hireDate" required /></label>
-        <label>Organization role<select formControlName="organizationRole"><option value="">Not assigned</option>@if (selected()?.organizationRole && !isKnownOrganizationRole(selected()!.organizationRole)) { <option [value]="selected()!.organizationRole">{{ selected()!.organizationRole }}</option> }@for (role of organizationRoles; track role) { <option [value]="role">{{ role }}</option> }</select></label>
-        <label>Status<select formControlName="employmentStatus">@for (status of employmentStatuses; track status) { <option [value]="status">{{ status === 'OnLeave' ? 'On leave' : status }}</option> }</select></label>
-        @if (!selected()) { <label class="wide">Create with picture<input type="file" accept="image/*" (change)="onCreatePicture($event)" /></label> }
-        <div class="actions wide"><button class="primary" type="submit" [disabled]="saving()">{{ saving() ? 'Saving...' : selected() ? 'Update full profile' : 'Create profile' }}</button>@if (selected()) { <button type="button" (click)="saveEmployment()">Update employment only</button> }</div>
-      </form>
+      <div class="editor-head">
+        <div class="editor-identity">
+          @if (selected()) {
+            <span class="employee-avatar employee-avatar--large" aria-hidden="true">
+              @if (selected()!.profilePictureUrl) { <img [src]="selected()!.profilePictureUrl" [alt]="displayName(selected()!)" /> } @else { {{ initials(selected()!) }} }
+            </span>
+          }
+          <div>
+            <p class="eyebrow">{{ selected() ? 'Employee profile' : 'Create profile' }}</p>
+            <h3>{{ selected() ? displayName(selected()!) : 'New employee' }}</h3>
+            @if (selected()) { <p class="profile-subtitle">{{ selected()!.jobTitle || 'No job title' }} · {{ selected()!.department || 'No department' }}</p> }
+          </div>
+        </div>
+        @if (selected()) {
+          <div class="header-actions">
+            @if (!editing()) { <button type="button" class="primary" (click)="startEditing()">Edit profile</button> }
+            <button type="button" class="danger" (click)="remove()">Delete</button>
+          </div>
+        }
+      </div>
 
-      @if (selected()) {
+      @if (selected() && !editing()) {
+        <section class="employee-details">
+          <article class="detail-panel">
+            <p class="section-label">Contact</p>
+            <dl>
+              <div><dt>Work email</dt><dd>{{ selected()!.workEmail || 'Not provided' }}</dd></div>
+              <div><dt>Personal email</dt><dd>{{ selected()!.personalEmail || 'Not provided' }}</dd></div>
+              <div><dt>Phone</dt><dd>{{ selected()!.phoneNumber || 'Not provided' }}</dd></div>
+              <div><dt>Address</dt><dd>{{ selected()!.address || 'Not provided' }}</dd></div>
+            </dl>
+          </article>
+          <article class="detail-panel">
+            <p class="section-label">Employment</p>
+            <dl>
+              <div><dt>Employee number</dt><dd>{{ selected()!.employeeNumber || 'Not provided' }}</dd></div>
+              <div><dt>Type</dt><dd>{{ selected()!.employmentType || 'Not provided' }}</dd></div>
+              <div><dt>Role</dt><dd>{{ selected()!.organizationRole || 'Not assigned' }}</dd></div>
+              <div><dt>Status</dt><dd><span class="status-pill">{{ selected()!.employmentStatus || 'Not provided' }}</span></dd></div>
+            </dl>
+          </article>
+        </section>
+
         <section class="quick-actions">
           <form [formGroup]="statusForm" (ngSubmit)="saveStatus()"><h4>Employment status</h4><select formControlName="employmentStatus">@for (status of employmentStatuses; track status) { <option [value]="status">{{ status === 'OnLeave' ? 'On leave' : status }}</option> }</select><button type="submit">Update status</button></form>
-          <div><h4>Profile picture</h4><input type="file" accept="image/*" (change)="onProfilePicture($event)" /><button type="button" [disabled]="!profilePicture" (click)="uploadPicture()">Upload picture</button></div>
+          <div><h4>Profile picture</h4><input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" (change)="onProfilePicture($event)" /><button type="button" [disabled]="!profilePicture" (click)="uploadPicture()">Upload picture</button></div>
         </section>
+      } @else {
+        <form class="profile-form" [formGroup]="form" (ngSubmit)="save()">
+          <label>Employee number<input formControlName="employeeNumber" /></label>
+          <label>First name<input formControlName="firstName" required /></label>
+          <label>Last name<input formControlName="lastName" required /></label>
+          <label>Work email<input type="email" formControlName="workEmail" /></label>
+          <label>Personal email<input type="email" formControlName="personalEmail" /></label>
+          <label>Phone<input formControlName="phoneNumber" /></label>
+          <label class="wide">Address<textarea formControlName="address" rows="2"></textarea></label>
+          <label>Date of birth<input type="date" formControlName="dateOfBirth" /></label>
+          <label>Job title<input formControlName="jobTitle" /></label>
+          <label>Department<input formControlName="department" /></label>
+          <label>Employment type<input formControlName="employmentType" placeholder="Full-time" /></label>
+          <label>Hire date<input type="date" formControlName="hireDate" required /></label>
+          <label>Organization role<select formControlName="organizationRole"><option value="">Not assigned</option>@if (selected()?.organizationRole && !isKnownOrganizationRole(selected()!.organizationRole)) { <option [value]="selected()!.organizationRole">{{ selected()!.organizationRole }}</option> }@for (role of organizationRoles; track role) { <option [value]="role">{{ role }}</option> }</select></label>
+          <label>Status<select formControlName="employmentStatus">@for (status of employmentStatuses; track status) { <option [value]="status">{{ status === 'OnLeave' ? 'On leave' : status }}</option> }</select></label>
+          @if (!selected()) { <label class="wide">Create with picture<input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" (change)="onCreatePicture($event)" /></label> }
+          <div class="actions wide">
+            @if (selected()) { <button type="button" (click)="cancelEditing()">Cancel</button> }
+            <button class="primary" type="submit" [disabled]="saving()">{{ saving() ? 'Saving...' : selected() ? 'Save changes' : 'Create profile' }}</button>
+          </div>
+        </form>
       }
     </main>
   </div>

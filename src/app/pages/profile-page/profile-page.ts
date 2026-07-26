@@ -46,10 +46,14 @@ export class ProfilePage implements OnInit {
     const file = input.files?.[0];
     if (!file || this.pictureUploading()) return;
     this.pictureError.set(null);
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      this.pictureError.set('Only JPG, JPEG, and PNG images are supported.');
+      input.value = '';
+      return;
+    }
     this.pictureUploading.set(true);
     try {
-      await this.service.uploadPicture(file);
-      await this.loadProfile();
+      this.profile.set(await this.service.uploadPicture(file));
       input.value = '';
     } catch {
       this.pictureError.set('Unable to upload the profile picture.');

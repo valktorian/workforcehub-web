@@ -83,6 +83,12 @@ export interface CreateTimeEntryRequest {
   notes?: string;
 }
 
+export interface CommandAcceptedResponse {
+  id: string;
+  status: string;
+  message: string;
+}
+
 export interface CreateLeaveRequestRequest {
   employeeId: string;
   leaveType: string;

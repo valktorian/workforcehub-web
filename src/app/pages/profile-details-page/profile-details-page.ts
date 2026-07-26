@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -8,7 +9,7 @@ import { ProfileDetailsPageService } from './services/profile-details-page.servi
 @Component({
   selector: 'app-profile-details-page',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [DatePipe, ReactiveFormsModule, RouterLink],
   templateUrl: './profile-details-page.html',
   styleUrl: './profile-details-page.scss',
 })
@@ -22,6 +23,7 @@ export class ProfileDetailsPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly loadError = signal<string | null>(null);
   protected readonly profile = signal<ProfileDetailsResponse | null>(null);
+  protected readonly editing = signal(false);
   protected readonly user = this.authService.user;
 
   protected readonly form = this.fb.group({
@@ -49,6 +51,18 @@ export class ProfileDetailsPage implements OnInit {
     void this.loadProfile();
   }
 
+  protected startEditing(): void {
+    this.error.set(null);
+    this.patchForm(this.profile());
+    this.editing.set(true);
+  }
+
+  protected cancelEditing(): void {
+    this.error.set(null);
+    this.patchForm(this.profile());
+    this.editing.set(false);
+  }
+
   protected async save(): Promise<void> {
     this.form.markAllAsTouched();
     this.error.set(null);
@@ -59,14 +73,16 @@ export class ProfileDetailsPage implements OnInit {
     this.saving.set(true);
     try {
       const value = this.form.getRawValue();
-      await this.service.updatePersonalInfo({
+      const updated = await this.service.updatePersonalInfo({
         accountId: user.accountId,
         personalEmail: value.personalEmail || null,
         phoneNumber: value.phoneNumber || null,
         address: value.address || null,
         dateOfBirth: value.dateOfBirth ? new Date(value.dateOfBirth).toISOString() : null,
       });
-      await this.loadProfile();
+      this.profile.set(updated);
+      this.patchForm(updated);
+      this.editing.set(false);
     } catch (error) {
       this.error.set(error instanceof Error ? error.message : 'Unable to update profile.');
     } finally {
@@ -80,17 +96,7 @@ export class ProfileDetailsPage implements OnInit {
     try {
       const profile = await this.service.getSelf();
       this.profile.set(profile);
-      if (profile) {
-        this.form.patchValue(
-          {
-            personalEmail: profile.personalEmail ?? '',
-            phoneNumber: profile.phoneNumber ?? '',
-            address: profile.address ?? '',
-            dateOfBirth: this.toDateInput(profile.dateOfBirth),
-          },
-          { emitEvent: false },
-        );
-      }
+      this.patchForm(profile);
     } catch {
       this.profile.set(null);
       this.loadError.set('Unable to load profile details.');
@@ -106,5 +112,17 @@ export class ProfileDetailsPage implements OnInit {
 
   private toDateInput(value: string | null | undefined): string {
     return value ? new Date(value).toISOString().slice(0, 10) : '';
+  }
+
+  private patchForm(profile: ProfileDetailsResponse | null): void {
+    this.form.patchValue(
+      {
+        personalEmail: profile?.personalEmail ?? '',
+        phoneNumber: profile?.phoneNumber ?? '',
+        address: profile?.address ?? '',
+        dateOfBirth: this.toDateInput(profile?.dateOfBirth),
+      },
+      { emitEvent: false },
+    );
   }
 }
