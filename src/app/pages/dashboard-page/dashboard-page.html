@@ -1,40 +1,66 @@
-﻿<section class="dashboard-page">
+<section class="dashboard-page">
   <div class="hero">
     <p class="eyebrow">Dashboard</p>
-    <h2>Live workforce overview.</h2>
+    <h2>{{ isEmployee() ? 'Your workforce workspace.' : 'Live workforce overview.' }}</h2>
     <p class="lead">
-      Profile totals and approval queues are loaded from the WorkForceHub API.
+      {{ isEmployee() ? 'Review your profile, leave and reporting periods.' : 'Follow workforce totals and approval queues.' }}
     </p>
   </div>
 
   <div class="stats">
     @for (item of stats(); track item.label) {
-      <article class="card stat-card" [class.tone-healthy]="item.tone === 'healthy'" [class.tone-warning]="item.tone === 'warning'" [class.tone-critical]="item.tone === 'critical'">
+      <a class="card stat-card" [routerLink]="item.link || '/dashboard'" [class.tone-healthy]="item.tone === 'healthy'" [class.tone-warning]="item.tone === 'warning'" [class.tone-critical]="item.tone === 'critical'">
         <p class="card-label">{{ item.label }}</p>
-        <strong>{{ item.value }}</strong>
+        <strong>{{ loading() ? '…' : item.value }}</strong>
         <span>{{ item.detail }}</span>
-      </article>
+      </a>
     }
   </div>
 
-  <section class="employee-preview card">
-    <div class="section-heading">
-      <p class="eyebrow">Directory</p>
-      <h3>Recent employee snapshot</h3>
-    </div>
-
-    <ul class="employee-list">
-      @for (employee of employees(); track employee.id) {
-        <li class="employee-item">
-          <div>
-            <strong class="employee-name">{{ displayName(employee) }}</strong>
-            <p class="employee-role">{{ employee.jobTitle || 'No job title' }} - {{ employee.department || 'No department' }}</p>
-          </div>
-          <span class="employee-status">{{ employee.employmentStatus || 'No status' }}</span>
-        </li>
-      } @empty { <li class="employee-item"><span>{{ loading() ? 'Loading employees...' : 'No profiles available.' }}</span></li> }
-    </ul>
-  </section>
+  @if (isEmployee()) {
+    <section class="employee-preview card">
+      <div class="section-heading">
+        <p class="eyebrow">My profile</p>
+        <h3>{{ selfProfile() ? displayName(selfProfile()!) : 'Profile setup pending' }}</h3>
+      </div>
+      @if (selfProfile()) {
+        <div class="self-summary">
+          <div><span>Job title</span><strong>{{ selfProfile()!.jobTitle || 'Not provided' }}</strong></div>
+          <div><span>Department</span><strong>{{ selfProfile()!.department || 'Not provided' }}</strong></div>
+          <div><span>Status</span><strong>{{ selfProfile()!.employmentStatus || 'Not provided' }}</strong></div>
+        </div>
+      } @else {
+        <p class="pending-copy">Your account is active, but HR still needs to create or link your employee profile.</p>
+      }
+    </section>
+  } @else if (isHr()) {
+    <section class="employee-preview card">
+      <div class="section-heading">
+        <p class="eyebrow">Directory</p>
+        <h3>Recent employee snapshot</h3>
+      </div>
+      <ul class="employee-list">
+        @for (employee of employees(); track employee.id) {
+          <li class="employee-item">
+            <details class="employee-menu">
+              <summary>
+                <span>
+                  <strong class="employee-name">{{ displayName(employee) }}</strong>
+                  <span class="employee-role">{{ employee.jobTitle || 'No job title' }} - {{ employee.department || 'No department' }}</span>
+                </span>
+                <span class="employee-status">{{ employee.employmentStatus || 'No status' }}</span>
+              </summary>
+              <nav aria-label="Employee destinations">
+                <a [routerLink]="['/employees']" [queryParams]="{ profileId: employee.id }">Employee profile</a>
+                <a [routerLink]="['/schedule']" [queryParams]="{ employeeId: employee.id, view: 'schedule' }">Schedule</a>
+                <a [routerLink]="['/schedule']" [queryParams]="{ employeeId: employee.id, view: 'leave' }">Leave requests</a>
+              </nav>
+            </details>
+          </li>
+        } @empty {
+          <li class="employee-item"><span>{{ loading() ? 'Loading employees...' : 'No profiles available.' }}</span></li>
+        }
+      </ul>
+    </section>
+  }
 </section>
-
-

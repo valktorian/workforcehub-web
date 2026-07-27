@@ -4,48 +4,65 @@ import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL, apiUrl } from '../../../core/api/api.config';
 import {
   ApiResponse,
-  DashboardData,
   DashboardProfileResponse,
   PagedResponse,
   PendingLeaveResponse,
   PendingTimesheetResponse,
 } from '../models';
 
+export interface EmployeeDashboardData {
+  profile: DashboardProfileResponse | null;
+  leaveRequests: PendingLeaveResponse[];
+  timesheets: PendingTimesheetResponse[];
+  leaveBalances: { leaveType: string; available: number; pending: number }[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class DashboardPageService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  async load(): Promise<DashboardData> {
-    const profileParams = new HttpParams().set('PageNumber', 1).set('PageSize', 5);
-    const countParams = new HttpParams().set('PageNumber', 1).set('PageSize', 1);
+  getProfiles(): Promise<PagedResponse<DashboardProfileResponse>> {
+    const params = new HttpParams().set('PageNumber', 1).set('PageSize', 5);
+    return this.get<PagedResponse<DashboardProfileResponse>>('/api/profiles', params);
+  }
 
-    const [profiles, leaveRequests, timesheets] = await Promise.all([
-      firstValueFrom(
-        this.http.get<ApiResponse<PagedResponse<DashboardProfileResponse>>>(
-          apiUrl('/api/profiles', this.baseUrl),
-          { params: profileParams },
-        ),
-      ),
-      firstValueFrom(
-        this.http.get<ApiResponse<PagedResponse<PendingLeaveResponse>>>(
-          apiUrl('/api/leave-requests/pending-approval', this.baseUrl),
-          { params: countParams },
-        ),
-      ),
-      firstValueFrom(
-        this.http.get<ApiResponse<PagedResponse<PendingTimesheetResponse>>>(
-          apiUrl('/api/timesheets/pending-approval', this.baseUrl),
-          { params: countParams },
-        ),
+  getPendingLeave(): Promise<PagedResponse<PendingLeaveResponse>> {
+    const params = new HttpParams().set('PageNumber', 1).set('PageSize', 5);
+    return this.get<PagedResponse<PendingLeaveResponse>>(
+      '/api/leave-requests/pending-approval',
+      params,
+    );
+  }
+
+  getPendingTimesheets(): Promise<PagedResponse<PendingTimesheetResponse>> {
+    const params = new HttpParams().set('PageNumber', 1).set('PageSize', 5);
+    return this.get<PagedResponse<PendingTimesheetResponse>>(
+      '/api/timesheets/pending-approval',
+      params,
+    );
+  }
+
+  async getEmployeeDashboard(): Promise<EmployeeDashboardData> {
+    const [profile, leaveRequests, timesheets, leaveBalances] = await Promise.allSettled([
+      this.get<DashboardProfileResponse>('/api/profiles/self'),
+      this.get<PendingLeaveResponse[]>('/api/leave-requests/self'),
+      this.get<PendingTimesheetResponse[]>('/api/timesheets/self'),
+      this.get<{ leaveType: string; available: number; pending: number }[]>(
+        '/api/leave-balances/self',
       ),
     ]);
-
     return {
-      profiles: profiles.data.items,
-      employeeCount: profiles.data.totalCount,
-      pendingLeaveCount: leaveRequests.data.totalCount,
-      pendingTimesheetCount: timesheets.data.totalCount,
+      profile: profile.status === 'fulfilled' ? profile.value : null,
+      leaveRequests: leaveRequests.status === 'fulfilled' ? leaveRequests.value : [],
+      timesheets: timesheets.status === 'fulfilled' ? timesheets.value : [],
+      leaveBalances: leaveBalances.status === 'fulfilled' ? leaveBalances.value : [],
     };
+  }
+
+  private get<T>(path: string, params?: HttpParams): Promise<T> {
+    return firstValueFrom(
+      this.http.get<ApiResponse<T>>(apiUrl(path, this.baseUrl), { params }),
+    ).then((response) => response.data);
   }
 }

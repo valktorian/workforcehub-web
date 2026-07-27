@@ -5,6 +5,119 @@
 .dashboard-page {
   display: grid;
   gap: 1.5rem;
+
+  .stats {
+    .stat-card {
+      color: inherit;
+      text-decoration: none;
+      transition: transform 150ms ease, border-color 150ms ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        border-color: var(--primary);
+      }
+    }
+  }
+
+  .employee-preview {
+    .self-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: .8rem;
+
+      div {
+        display: grid;
+        gap: .3rem;
+        padding: 1rem;
+        border: 1px solid var(--border-muted);
+        border-radius: var(--radius-md);
+        background: var(--surface-overlay);
+
+        span {
+          color: var(--text-dim);
+          font-size: .78rem;
+          font-weight: 800;
+          text-transform: uppercase;
+        }
+      }
+    }
+
+    .pending-copy {
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .employee-list {
+      .employee-item {
+        display: block;
+        padding: 0;
+
+        .employee-menu {
+          summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1rem 1.1rem;
+            cursor: pointer;
+            list-style: none;
+
+            &::-webkit-details-marker {
+              display: none;
+            }
+
+            > span:first-child {
+              min-width: 0;
+              display: grid;
+              gap: .2rem;
+            }
+          }
+
+          nav {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .55rem;
+            padding: 0 1.1rem 1rem;
+
+            a {
+              padding: .65rem .75rem;
+              border: 1px solid var(--border-muted);
+              border-radius: .65rem;
+              color: var(--text-color);
+              text-align: center;
+              text-decoration: none;
+              font-size: .82rem;
+              font-weight: 800;
+
+              &:hover {
+                border-color: var(--primary);
+                color: var(--primary);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 680px) {
+  .dashboard-page {
+    .employee-preview .self-summary {
+      grid-template-columns: 1fr;
+    }
+
+    .employee-preview .employee-list .employee-item .employee-menu {
+      summary {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      nav {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
 }
 
 .hero,
