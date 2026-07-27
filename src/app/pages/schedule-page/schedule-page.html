@@ -1,14 +1,20 @@
 <header class="page-header">
   <div>
     <p class="eyebrow">Time management</p>
-    <h2>My schedule</h2>
-    <p>Plan work, request leave, and keep your timesheets current.</p>
+    <h2>{{ employeeContext() ? (employeeContextName() || 'Employee') + ' schedule' : 'My schedule' }}</h2>
+    <p>{{ employeeContext() ? 'Review the selected employee schedule, leave and reporting periods.' : 'Plan work, request leave, and keep your timesheets current.' }}</p>
   </div>
   <div class="header-actions">
-    <button class="leave-request-button" type="button" (click)="openLeaveRequestForm()">
-      <span aria-hidden="true">+</span>
-      Nouvelle demande de congé
-    </button>
+    <div class="create-actions">
+      <button class="leave-request-button" type="button" (click)="openLeaveRequestForm()">
+        <span aria-hidden="true">+</span>
+        Nouvelle demande de congé
+      </button>
+      <button class="timesheet-create-button" type="button" (click)="openTimesheetForm()">
+        <span aria-hidden="true">+</span>
+        Nouvelle feuille de temps
+      </button>
+    </div>
     <div class="metrics">
       <article><span>Heures affichées</span><strong>{{ totalHours() | number: '1.0-1' }}h</strong></article>
       <article><span>Feuilles de temps</span><strong>{{ timesheets().length }}</strong></article>
@@ -52,6 +58,26 @@
           <p class="muted">Aucune demande en attente.</p>
         }
       </section>
+
+      <section class="side-card approvals-card">
+        <div class="card-heading">
+          <h3>Feuilles à valider</h3>
+          <span class="count-badge">{{ pendingTimesheets().length }}</span>
+        </div>
+        @for (sheet of pendingTimesheets(); track sheet.id) {
+          <article class="approval">
+            <strong>{{ sheet.periodStart | date: 'dd/MM/yyyy' }} – {{ sheet.periodEnd | date: 'dd/MM/yyyy' }}</strong>
+            <span>{{ sheet.totalHours }}h</span>
+            <small>Employé {{ sheet.employeeId.slice(0, 8) }}</small>
+            <div class="review-actions">
+              <button class="reject-button" type="button" (click)="openTimesheetReview(sheet, 'reject')">Refuser</button>
+              <button class="approve-button" type="button" (click)="openTimesheetReview(sheet, 'approve')">Approuver</button>
+            </div>
+          </article>
+        } @empty {
+          <p class="muted">Aucune feuille en attente.</p>
+        }
+      </section>
     }
 
     <section class="side-card">
@@ -68,7 +94,10 @@
     </section>
 
     <section class="side-card">
-      <h3>Timesheets</h3>
+      <div class="card-heading">
+        <h3>Timesheets</h3>
+        <button type="button" (click)="openTimesheetForm()">Create</button>
+      </div>
       @for (sheet of timesheets(); track sheet.id) {
         <div class="sheet">
           <div>
@@ -77,10 +106,36 @@
           </div>
           @if (sheet.status.toLowerCase() === 'draft') {
             <button type="button" (click)="submitTimesheet(sheet)">Submit</button>
+          } @else if (canReopenTimesheet() && sheet.status.toLowerCase() !== 'draft') {
+            <button type="button" (click)="reopenTimesheet(sheet)">Reopen</button>
           }
         </div>
       } @empty {
         <p class="muted">No timesheets in this period.</p>
+      }
+    </section>
+
+    <section class="side-card" [class.focus-card]="requestedView === 'leave'">
+      <h3>My leave requests</h3>
+      @for (request of leaveRequests(); track request.id) {
+        <div class="leave-item">
+          <div>
+            <strong>{{ request.leaveType }}</strong>
+            <span>{{ request.startDate | date: 'dd/MM/yyyy' }} – {{ request.endDate | date: 'dd/MM/yyyy' }}</span>
+            <small>{{ request.status }}</small>
+          </div>
+          <div class="leave-actions">
+            @if (request.status.toLowerCase() === 'draft') {
+              <button type="button" (click)="editLeaveRequest(request)">Edit</button>
+              <button type="button" (click)="submitLeaveRequest(request)">Submit</button>
+            }
+            @if (!['cancelled', 'approved', 'rejected'].includes(request.status.toLowerCase())) {
+              <button class="reject-button" type="button" (click)="cancelLeaveRequest(request)">Cancel</button>
+            }
+          </div>
+        </div>
+      } @empty {
+        <p class="muted">No leave requests.</p>
       }
     </section>
   </aside>
@@ -119,9 +174,9 @@
             <button class="primary" type="submit" [disabled]="saving() || timeEntryForm.invalid">Save entry</button>
           </div>
         </form>
-      } @else {
+      } @else if (editor() === 'leave') {
         <p class="eyebrow">Demande de congé</p>
-        <h3>Nouvelle demande de congé</h3>
+        <h3>{{ selectedLeave() ? 'Modifier la demande' : 'Nouvelle demande de congé' }}</h3>
         <form (ngSubmit)="saveLeaveRequest()">
           <label>
             Type de congé
@@ -139,7 +194,23 @@
           <div class="actions">
             <button type="button" (click)="closeEditor()">Annuler</button>
             <button class="primary" type="submit" [disabled]="saving()">
-              {{ saving() ? 'Envoi…' : 'Envoyer la demande' }}
+              {{ saving() ? 'Enregistrement…' : selectedLeave() ? 'Enregistrer' : 'Créer le brouillon' }}
+            </button>
+          </div>
+        </form>
+      } @else {
+        <p class="eyebrow">Feuille de temps</p>
+        <h3>Créer une feuille de temps</h3>
+        <form (ngSubmit)="createTimesheet()">
+          <div class="row">
+            <label>Du<input type="date" name="periodStart" [(ngModel)]="timesheetForm.periodStart" required /></label>
+            <label>Au<input type="date" name="periodEnd" [(ngModel)]="timesheetForm.periodEnd" required /></label>
+          </div>
+          <p class="form-help">Choose the reporting period. Existing time entries remain unchanged.</p>
+          <div class="actions">
+            <button type="button" (click)="closeEditor()">Annuler</button>
+            <button class="primary" type="submit" [disabled]="saving()">
+              {{ saving() ? 'Création…' : 'Créer le brouillon' }}
             </button>
           </div>
         </form>
@@ -167,17 +238,23 @@
   </div>
 }
 
-@if (reviewRequest(); as request) {
+@if (reviewRequest() || reviewTimesheet()) {
   <div class="modal-backdrop confirmation-backdrop" (click)="closeReview()">
     <section class="modal review-modal" role="dialog" aria-modal="true" aria-labelledby="review-title" (click)="$event.stopPropagation()">
       <button class="close" type="button" (click)="closeReview()" aria-label="Fermer">×</button>
-      <p class="eyebrow">Validation de congé</p>
+      <p class="eyebrow">{{ reviewKind() === 'leave' ? 'Validation de congé' : 'Validation de feuille de temps' }}</p>
       <h3 id="review-title">
-        {{ reviewDecision() === 'approve' ? 'Approuver' : 'Refuser' }} cette demande ?
+        {{ reviewDecision() === 'approve' ? 'Approuver' : 'Refuser' }}
+        {{ reviewKind() === 'leave' ? 'cette demande ?' : 'cette feuille de temps ?' }}
       </h3>
       <div class="review-summary">
-        <strong>{{ request.leaveType }}</strong>
-        <span>{{ request.startDate | date: 'dd/MM/yyyy' }} – {{ request.endDate | date: 'dd/MM/yyyy' }}</span>
+        @if (reviewRequest()) {
+          <strong>{{ reviewRequest()!.leaveType }}</strong>
+          <span>{{ reviewRequest()!.startDate | date: 'dd/MM/yyyy' }} – {{ reviewRequest()!.endDate | date: 'dd/MM/yyyy' }}</span>
+        } @else {
+          <strong>{{ reviewTimesheet()!.totalHours }}h</strong>
+          <span>{{ reviewTimesheet()!.periodStart | date: 'dd/MM/yyyy' }} – {{ reviewTimesheet()!.periodEnd | date: 'dd/MM/yyyy' }}</span>
+        }
       </div>
       <label>
         Commentaire

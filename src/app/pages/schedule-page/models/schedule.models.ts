@@ -32,6 +32,7 @@ export interface Timesheet {
   periodEnd: string;
   totalHours: number;
   status: string;
+  reviewComment?: string;
 }
 
 export interface LeaveRequest {
@@ -42,6 +43,7 @@ export interface LeaveRequest {
   endDate: string;
   status: string;
   reason?: string;
+  reviewComment?: string;
 }
 
 export interface LeaveBalance {
@@ -95,4 +97,10 @@ export interface CreateLeaveRequestRequest {
   startDate: string;
   endDate: string;
   reason?: string;
+}
+
+export interface CreateTimesheetRequest {
+  employeeId: string;
+  periodStart: string;
+  periodEnd: string;
 }
