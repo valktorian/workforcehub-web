@@ -77,9 +77,57 @@
         <section class="quick-actions">
           <form [formGroup]="statusForm" (ngSubmit)="saveStatus()"><h4>Employment status</h4><select formControlName="employmentStatus">@for (status of employmentStatuses; track status) { <option [value]="status">{{ status === 'OnLeave' ? 'On leave' : status }}</option> }</select><button type="submit">Update status</button></form>
           <div><h4>Profile picture</h4><input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" (change)="onProfilePicture($event)" /><button type="button" [disabled]="!profilePicture" (click)="uploadPicture()">Upload picture</button></div>
+          @if (!selected()!.accountId) {
+            <div class="account-link">
+              <h4>Link login account</h4>
+              <select [(ngModel)]="linkAccountId">
+                <option value="">Select an account</option>
+                @for (account of accounts(); track account.id) {
+                  <option [value]="account.id">{{ account.email }} · {{ account.role }}</option>
+                }
+              </select>
+              <button type="button" [disabled]="!linkAccountId || saving()" (click)="linkAccount()">Link account</button>
+            </div>
+          }
         </section>
       } @else {
         <form class="profile-form" [formGroup]="form" (ngSubmit)="save()">
+          @if (!selected()) {
+            <section class="onboarding-section wide">
+              <div class="onboarding-head">
+                <div>
+                  <p class="section-label">Step 1</p>
+                  <h4>Login account</h4>
+                </div>
+                @if (pendingAccount()) {
+                  <span class="recovery-badge">Account created · retry profile</span>
+                }
+              </div>
+              @if (pendingAccount()) {
+                <p class="recovery-copy">{{ pendingAccount()!.email }} is ready. Correct the profile information and submit again without creating another account.</p>
+              } @else {
+                <label class="existing-account">Existing account
+                  <select formControlName="existingAccountId">
+                    <option value="">Create a new account</option>
+                    @for (account of accounts(); track account.id) {
+                      <option [value]="account.id">{{ account.email }} · {{ account.role }}</option>
+                    }
+                  </select>
+                </label>
+                @if (!form.controls.existingAccountId.value) {
+                  <div class="onboarding-fields">
+                    <label>Email<input type="email" formControlName="accountEmail" autocomplete="email" required /></label>
+                    <label>Password<input type="password" formControlName="accountPassword" autocomplete="new-password" required /></label>
+                    <label>Access role<select formControlName="accountRole">@for (role of accountRoles; track role) { <option [value]="role">{{ role }}</option> }</select></label>
+                  </div>
+                }
+              }
+            </section>
+            <div class="profile-step wide">
+              <p class="section-label">Step 2</p>
+              <h4>Employee profile</h4>
+            </div>
+          }
           <label>Employee number<input formControlName="employeeNumber" /></label>
           <label>First name<input formControlName="firstName" required /></label>
           <label>Last name<input formControlName="lastName" required /></label>
@@ -94,10 +142,10 @@
           <label>Hire date<input type="date" formControlName="hireDate" required /></label>
           <label>Organization role<select formControlName="organizationRole"><option value="">Not assigned</option>@if (selected()?.organizationRole && !isKnownOrganizationRole(selected()!.organizationRole)) { <option [value]="selected()!.organizationRole">{{ selected()!.organizationRole }}</option> }@for (role of organizationRoles; track role) { <option [value]="role">{{ role }}</option> }</select></label>
           <label>Status<select formControlName="employmentStatus">@for (status of employmentStatuses; track status) { <option [value]="status">{{ status === 'OnLeave' ? 'On leave' : status }}</option> }</select></label>
-          @if (!selected()) { <label class="wide">Create with picture<input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" (change)="onCreatePicture($event)" /></label> }
+          @if (!selected()) { <label class="wide">Profile picture<input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" (change)="onCreatePicture($event)" /></label> }
           <div class="actions wide">
             @if (selected()) { <button type="button" (click)="cancelEditing()">Cancel</button> }
-            <button class="primary" type="submit" [disabled]="saving()">{{ saving() ? 'Saving...' : selected() ? 'Save changes' : 'Create profile' }}</button>
+            <button class="primary" type="submit" [disabled]="saving()">{{ saving() ? 'Saving...' : selected() ? 'Save changes' : pendingAccount() ? 'Retry profile creation' : 'Create account and profile' }}</button>
           </div>
         </form>
       }

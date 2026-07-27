@@ -75,11 +75,12 @@ export class App {
       authOnly: true,
     },
     {
-      path: '/settings',
-      label: 'Settings',
-      hint: 'Workspace preferences and setup',
+      path: '/accounts',
+      label: 'Accounts',
+      hint: 'Workforce access administration',
       icon: 'settings',
       authOnly: true,
+      roles: ['HRAdmin', 'HRManager'],
     },
   ];
 

@@ -3,6 +3,7 @@ export * from './api-response.model';
 export * from './create-employee-request.model';
 export * from './employee-profile-response.model';
 export * from './list-employees-request.model';
+export * from './onboarding-account.model';
 export * from './paged-response.model';
 export * from './update-employee-employment-request.model';
 export * from './update-employee-request.model';

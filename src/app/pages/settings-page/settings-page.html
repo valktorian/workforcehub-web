@@ -1,8 +1,102 @@
-﻿<section class="page-card">
-  <p class="eyebrow">Settings</p>
-  <h2>Workspace configuration</h2>
-  <p>
-    This admin-only route is ready for account controls and workspace preferences when the API flow
-    is expanded.
-  </p>
+<section class="accounts-page">
+  <header class="accounts-head">
+    <div>
+      <p class="eyebrow">Access management</p>
+      <h2>Account administration</h2>
+      <p>{{ totalCount() }} workforce accounts</p>
+    </div>
+    <button class="primary" type="button" (click)="createAccount()">Create account</button>
+  </header>
+
+  @if (error()) { <p class="notice error">{{ error() }}</p> }
+  @if (message()) { <p class="notice success">{{ message() }}</p> }
+
+  <div class="accounts-workspace">
+    <aside class="account-directory card">
+      <input type="search" placeholder="Search accounts..." aria-label="Search accounts" (input)="updateSearch($event)" />
+      @if (loading()) { <p class="state">Loading accounts...</p> }
+      <div class="account-list">
+        @for (account of filteredAccounts(); track account.id) {
+          <button type="button" class="account-row" [class.active]="account.id === selected()?.id" (click)="select(account)">
+            <span class="avatar">{{ initials(account) }}</span>
+            <span class="copy">
+              <strong>{{ displayName(account) }}</strong>
+              <span>{{ account.email }}</span>
+              <small>{{ account.role }}</small>
+            </span>
+          </button>
+        } @empty {
+          @if (!loading()) { <p class="state">No accounts found.</p> }
+        }
+      </div>
+      <nav class="pagination" aria-label="Account pages">
+        <button type="button" [disabled]="pageNumber() <= 1" (click)="load(pageNumber() - 1)">Previous</button>
+        <span>{{ pageNumber() }} / {{ totalPages() }}</span>
+        <button type="button" [disabled]="pageNumber() >= totalPages()" (click)="load(pageNumber() + 1)">Next</button>
+      </nav>
+    </aside>
+
+    <main class="account-panel card">
+      @if (selected() && !editing()) {
+        <header class="identity">
+          <span class="avatar large">{{ initials(selected()!) }}</span>
+          <div>
+            <p class="eyebrow">Account</p>
+            <h3>{{ displayName(selected()!) }}</h3>
+            <p>{{ selected()!.email }}</p>
+          </div>
+          <div class="identity-actions">
+            <button class="primary" type="button" (click)="startEditing()">Edit</button>
+            <button class="danger" type="button" (click)="remove()">Delete</button>
+          </div>
+        </header>
+
+        <section class="account-details">
+          <div><span>Role</span><strong>{{ selected()!.role }}</strong></div>
+          <div><span>Status</span><strong>{{ selected()!.isActive ? 'Active' : 'Inactive' }}</strong></div>
+          <div><span>Created</span><strong>{{ selected()!.createdAt | date: 'mediumDate' }}</strong></div>
+          <div class="profile-access">
+            <span>Profile access</span>
+            <strong>Complete or link from Employees</strong>
+            <a [routerLink]="['/employees']" [queryParams]="{ accountId: selected()!.id }">Complete employee profile</a>
+          </div>
+        </section>
+
+        <form class="password-form" [formGroup]="passwordForm" (ngSubmit)="resetPassword()">
+          <div>
+            <h4>Reset password</h4>
+            <p>The employee will use this password on their next login.</p>
+          </div>
+          <input type="password" formControlName="password" autocomplete="new-password" placeholder="New password" />
+          <button type="submit" [disabled]="saving()">Update password</button>
+        </form>
+      } @else if (editing()) {
+        <header class="form-head">
+          <div>
+            <p class="eyebrow">{{ selected() ? 'Edit account' : 'Invite employee' }}</p>
+            <h3>{{ selected() ? displayName(selected()!) : 'Create workforce account' }}</h3>
+          </div>
+        </header>
+        <form class="account-form" [formGroup]="form" (ngSubmit)="save()">
+          <label>First name<input formControlName="firstName" required /></label>
+          <label>Last name<input formControlName="lastName" required /></label>
+          <label class="wide">Email<input type="email" formControlName="email" required /></label>
+          <label>Role<select formControlName="role">@for (role of roles; track role) { <option [value]="role">{{ role }}</option> }</select></label>
+          @if (!selected()) {
+            <label>Password<input type="password" formControlName="password" autocomplete="new-password" required /></label>
+          }
+          <div class="form-actions wide">
+            <button type="button" (click)="cancelEditing()">Cancel</button>
+            <button class="primary" type="submit" [disabled]="saving()">{{ saving() ? 'Saving...' : 'Save account' }}</button>
+          </div>
+        </form>
+      } @else {
+        <section class="empty-state">
+          <p class="eyebrow">Accounts</p>
+          <h3>Select an account</h3>
+          <p>Inspect access, update roles and passwords, or create a new workforce account.</p>
+        </section>
+      }
+    </main>
+  </div>
 </section>

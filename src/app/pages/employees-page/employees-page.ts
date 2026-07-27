@@ -1,10 +1,12 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import {
   CreateEmployeeRequest,
   ApiProblemResponse,
   EmployeeProfileResponse,
+  OnboardingAccount,
   UpdateEmployeeEmploymentRequest,
   UpdateEmployeeRequest,
 } from './models';
@@ -13,13 +15,14 @@ import { EmployeesPageService } from './services/employees-page.service';
 @Component({
   selector: 'app-employees-page',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [FormsModule, ReactiveFormsModule],
   templateUrl: './employees-page.html',
   styleUrl: './employees-page.scss',
 })
 export class EmployeesPage implements OnInit {
   private readonly service = inject(EmployeesPageService);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly profiles = signal<EmployeeProfileResponse[]>([]);
   protected readonly searchQuery = signal('');
@@ -50,6 +53,10 @@ export class EmployeesPage implements OnInit {
   protected readonly pageSize = 12;
   protected readonly employmentStatuses = ['Active', 'OnLeave', 'Suspended', 'Inactive', 'Terminated'];
   protected readonly organizationRoles = ['Employee', 'Manager', 'HR', 'Admin'];
+  protected readonly accountRoles = ['Employee', 'Manager', 'HRManager', 'HRAdmin'];
+  protected readonly accounts = signal<OnboardingAccount[]>([]);
+  protected readonly pendingAccount = signal<OnboardingAccount | null>(null);
+  protected linkAccountId = '';
   protected createPicture: File | null = null;
   protected profilePicture: File | null = null;
 
@@ -69,10 +76,15 @@ export class EmployeesPage implements OnInit {
     hireDate: ['', Validators.required],
     organizationRole: [''],
     employmentStatus: ['Active'],
+    accountEmail: ['', [Validators.email]],
+    accountPassword: [''],
+    accountRole: ['Employee'],
+    existingAccountId: [''],
   });
 
   ngOnInit(): void {
     void this.load();
+    void this.loadAccounts();
   }
 
   protected async load(page = this.pageNumber()): Promise<void> {
@@ -82,6 +94,9 @@ export class EmployeesPage implements OnInit {
       this.pageNumber.set(result.pageNumber);
       this.totalPages.set(Math.max(1, result.totalPages));
       this.totalCount.set(result.totalCount);
+      const requestedProfileId = this.route.snapshot.queryParamMap.get('profileId');
+      const requestedProfile = result.items.find((profile) => profile.id === requestedProfileId);
+      if (requestedProfile) await this.select(requestedProfile);
     }, true);
   }
 
@@ -99,6 +114,8 @@ export class EmployeesPage implements OnInit {
     this.editing.set(true);
     this.form.reset({ employmentStatus: 'Active' });
     this.createPicture = null;
+    this.pendingAccount.set(null);
+    this.linkAccountId = '';
     this.clearFeedback();
   }
 
@@ -120,6 +137,10 @@ export class EmployeesPage implements OnInit {
       hireDate: this.dateInput(profile.hireDate),
       organizationRole: this.organizationRoleValue(profile.organizationRole),
       employmentStatus: profile.employmentStatus ?? 'Active',
+      accountEmail: '',
+      accountPassword: '',
+      accountRole: 'Employee',
+      existingAccountId: '',
     });
     this.statusForm.setValue({ employmentStatus: profile.employmentStatus ?? 'Active' });
     this.clearFeedback();
@@ -147,11 +168,16 @@ export class EmployeesPage implements OnInit {
         this.edit(updated);
         this.message.set('Profile updated.');
       } else {
-        const created = await this.service.create(this.createRequest(), this.createPicture ?? undefined);
+        const account = this.pendingAccount() ?? await this.createOnboardingAccount();
+        this.pendingAccount.set(account);
+        const created = await this.service.create(
+          this.createRequest(account.id),
+          this.createPicture ?? undefined,
+        );
         this.newProfile();
         this.profiles.update((profiles) => [created, ...profiles].slice(0, this.pageSize));
         this.totalCount.update((count) => count + 1);
-        this.message.set('Profile created.');
+        this.message.set('Account and employee profile created.');
       }
     }, false, true);
   }
@@ -190,6 +216,17 @@ export class EmployeesPage implements OnInit {
       this.replaceProfile(updated);
       this.edit(updated);
       this.message.set('Profile picture uploaded.');
+    }, false, true);
+  }
+
+  protected async linkAccount(): Promise<void> {
+    const profile = this.selected();
+    if (!profile || !this.linkAccountId || this.saving()) return;
+    await this.run(async () => {
+      const updated = await this.service.linkAccount(profile.id, this.linkAccountId);
+      this.replaceProfile(updated);
+      this.edit(updated);
+      this.message.set('Account linked to the employee profile.');
     }, false, true);
   }
 
@@ -258,7 +295,7 @@ export class EmployeesPage implements OnInit {
     return file;
   }
 
-  private createRequest(): CreateEmployeeRequest {
+  private createRequest(accountId: string | null = null): CreateEmployeeRequest {
     const value = this.form.getRawValue();
     return {
       employeeNumber: value.employeeNumber.trim(),
@@ -276,7 +313,7 @@ export class EmployeesPage implements OnInit {
       hireDate: this.iso(value.hireDate) ?? new Date().toISOString(),
       organizationRole: value.organizationRole.trim(),
       employmentStatus: value.employmentStatus.trim(),
-      accountId: null,
+      accountId,
       profilePictureUrl: null,
     };
   }
@@ -319,6 +356,38 @@ export class EmployeesPage implements OnInit {
     this.profiles.update((profiles) =>
       profiles.map((profile) => profile.id === updated.id ? updated : profile),
     );
+  }
+
+  private async loadAccounts(): Promise<void> {
+    try {
+      const accounts = await this.service.listAccounts();
+      this.accounts.set(accounts);
+      const requestedAccountId = this.route.snapshot.queryParamMap.get('accountId');
+      if (requestedAccountId && accounts.some((account) => account.id === requestedAccountId)) {
+        this.newProfile();
+        this.form.patchValue({ existingAccountId: requestedAccountId });
+      }
+    } catch {
+      this.accounts.set([]);
+    }
+  }
+
+  private createOnboardingAccount(): Promise<OnboardingAccount> {
+    const value = this.form.getRawValue();
+    if (value.existingAccountId) {
+      const existing = this.accounts().find((account) => account.id === value.existingAccountId);
+      if (existing) return Promise.resolve(existing);
+    }
+    if (!value.accountEmail.trim() || value.accountPassword.length < 8) {
+      throw new Error('Account email and a password of at least 8 characters are required.');
+    }
+    return this.service.createAccount({
+      email: value.accountEmail.trim(),
+      password: value.accountPassword,
+      firstName: value.firstName.trim(),
+      lastName: value.lastName.trim(),
+      role: value.accountRole,
+    });
   }
 
   private async run(action: () => Promise<void>, loading = false, saving = false): Promise<void> {

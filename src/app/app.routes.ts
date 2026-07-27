@@ -33,7 +33,8 @@ export const routes: Routes = [
   },
   {
     path: 'employees',
-    canActivate: [authGuard],
+    canActivate: [authGuard, roleGuard],
+    data: { roles: ['HRAdmin', 'HRManager'] },
     loadComponent: () =>
       import('./pages/employees-page/employees-page').then((m) => m.EmployeesPage),
   },
@@ -44,11 +45,15 @@ export const routes: Routes = [
       import('./pages/schedule-page/schedule-page').then((m) => m.SchedulePage),
   },
   {
-    path: 'settings',
+    path: 'accounts',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['Admin'] },
+    data: { roles: ['HRAdmin', 'HRManager'] },
     loadComponent: () =>
       import('./pages/settings-page/settings-page').then((m) => m.SettingsPage),
+  },
+  {
+    path: 'settings',
+    redirectTo: 'accounts',
   },
   {
     path: '**',

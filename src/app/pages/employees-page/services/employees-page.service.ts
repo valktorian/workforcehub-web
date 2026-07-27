@@ -4,9 +4,11 @@ import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL, apiUrl } from '../../../core/api/api.config';
 import {
   ApiResponse,
+  AccountCommandResponse,
   CreateEmployeeRequest,
   EmployeeProfileResponse,
   ListEmployeesRequest,
+  OnboardingAccount,
   PagedResponse,
   UpdateEmployeeEmploymentRequest,
   UpdateEmployeeRequest,
@@ -37,6 +39,43 @@ export class EmployeesPageService {
         apiUrl(`/api/profiles/${id}`, this.baseUrl),
       ),
     ).then((response) => response.data);
+  }
+
+  listAccounts(): Promise<OnboardingAccount[]> {
+    const params = new HttpParams().set('PageNumber', 1).set('PageSize', 100);
+    return firstValueFrom(
+      this.http.get<ApiResponse<PagedResponse<OnboardingAccount>>>(
+        apiUrl('/api/accounts', this.baseUrl),
+        { params },
+      ),
+    ).then((response) => response.data.items);
+  }
+
+  createAccount(request: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  }): Promise<OnboardingAccount> {
+    return firstValueFrom(
+      this.http.post<AccountCommandResponse>(apiUrl('/api/accounts', this.baseUrl), request),
+    ).then((response) => ({
+      id: response.accountId,
+      email: response.email,
+      firstName: response.firstName,
+      lastName: response.lastName,
+      role: response.role,
+    }));
+  }
+
+  linkAccount(profileId: string, accountId: string): Promise<EmployeeProfileResponse> {
+    return firstValueFrom(
+      this.http.post<EmployeeProfileResponse>(
+        apiUrl(`/api/profiles/${profileId}/link-account`, this.baseUrl),
+        { profileId, accountId },
+      ),
+    );
   }
 
   create(request: CreateEmployeeRequest, picture?: File): Promise<EmployeeProfileResponse> {
