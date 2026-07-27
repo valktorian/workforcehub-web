@@ -11,6 +11,7 @@ type NavigationItem = {
   hint: string;
   icon: string;
   authOnly?: boolean;
+  roles?: readonly string[];
 };
 
 @Component({
@@ -30,9 +31,17 @@ export class App {
   protected readonly defaultMatchOptions = { exact: false };
   protected readonly isLoggedIn = this.authService.isLoggedIn;
   protected readonly user = this.authService.user;
+  protected readonly signedInAt = this.authService.signedInAt;
+  protected readonly lastLoginAt = this.authService.lastLoginAt;
+  protected readonly connectionTime = this.authService.connectionTime;
   protected readonly theme = signal<AppTheme>(this.readTheme());
+  protected readonly navigationCollapsed = signal(this.readNavigationState());
   protected readonly navigationItems = computed(() =>
-    this.allNavigationItems.filter((item) => !item.authOnly || this.isLoggedIn()),
+    this.allNavigationItems.filter(
+      (item) =>
+        (!item.authOnly || this.isLoggedIn()) &&
+        (!item.roles || this.authService.hasAnyRole(item.roles)),
+    ),
   );
 
   private readonly allNavigationItems: NavigationItem[] = [
@@ -56,6 +65,7 @@ export class App {
       hint: 'People directory and staffing data',
       icon: 'users',
       authOnly: true,
+      roles: ['HRAdmin', 'HRManager'],
     },
     {
       path: '/schedule',
@@ -83,6 +93,12 @@ export class App {
     this.theme.set(next);
     this.applyTheme(next);
     window.localStorage.setItem(this.themeStorageKey, next);
+  }
+
+  protected toggleNavigation(): void {
+    const collapsed = !this.navigationCollapsed();
+    this.navigationCollapsed.set(collapsed);
+    window.localStorage.setItem('workforcehub.navigation.collapsed', String(collapsed));
   }
 
   protected logout(): void {
@@ -113,5 +129,10 @@ export class App {
     return stored === 'moon' || stored === 'night-meteor' || stored === 'default'
       ? stored
       : 'night-meteor';
+  }
+
+  private readNavigationState(): boolean {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('workforcehub.navigation.collapsed') === 'true';
   }
 }

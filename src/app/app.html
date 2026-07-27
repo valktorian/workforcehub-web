@@ -1,51 +1,66 @@
-﻿<div class="app-shell">
-  @if (isLoggedIn()) {
-  <aside class="sidebar">
-    <div class="brand">
-      <p class="eyebrow">WorkForceHub</p>
-      <h1>People operations</h1>
-      <p class="subtitle">Profiles, roles, and workspace access powered by the deployed API.</p>
-    </div>
-
-    <nav class="nav" aria-label="Primary">
-      @for (item of navigationItems(); track item.path) {
-        <a
-          class="nav-link"
-          [routerLink]="item.path"
-          routerLinkActive="is-active"
-          [routerLinkActiveOptions]="item.path === '/' ? exactMatchOptions : defaultMatchOptions"
-        >
-          <span class="nav-icon" aria-hidden="true">{{ item.icon.slice(0, 1).toUpperCase() }}</span>
-          <span>
-            <span class="nav-label">{{ item.label }}</span>
-            <span class="nav-hint">{{ item.hint }}</span>
-          </span>
-        </a>
-      }
-    </nav>
-
-    <section class="session-card" aria-label="Session">
-      @if (isLoggedIn()) {
-        <p class="session-label">Signed in</p>
-        <h2>{{ user()?.email }}</h2>
-        <p>{{ user()?.role }}</p>
-      } @else {
-        <p class="session-label">Guest</p>
-        <h2>Sign in required</h2>
-        <p>Use your WorkForceHub account to continue.</p>
-      }
-
-      <div class="session-actions">
+@if (isLoggedIn()) {
+  <div class="app-shell authenticated" [class.navigation-collapsed]="navigationCollapsed()">
+    <header class="app-header">
+      <a class="brand" routerLink="/dashboard">
+        <span class="brand-mark">W</span>
+        <span>
+          <span class="eyebrow">WorkForceHub</span>
+          <strong>People operations</strong>
+        </span>
+      </a>
+      <div class="header-actions">
         <button class="shell-button shell-button--icon" type="button" aria-label="Switch theme" (click)="nextTheme()">✦</button>
-        <button class="shell-button" type="button" (click)="authAction()">
-          {{ isLoggedIn() ? 'Logout' : 'Login' }}
-        </button>
+        <button class="shell-button" type="button" (click)="logout()">Logout</button>
       </div>
-    </section>
-  </aside>
-  }
+    </header>
 
-  <main class="content">
+    <aside class="sidebar">
+      <button
+        class="navigation-toggle"
+        type="button"
+        [attr.aria-label]="navigationCollapsed() ? 'Expand navigation' : 'Collapse navigation'"
+        [title]="navigationCollapsed() ? 'Expand navigation' : 'Collapse navigation'"
+        (click)="toggleNavigation()"
+      >
+        <img src="/assets/icons/arrow-left.svg" alt="" />
+      </button>
+      <nav class="nav" aria-label="Primary">
+        @for (item of navigationItems(); track item.path) {
+          <a
+            class="nav-link"
+            [routerLink]="item.path"
+            routerLinkActive="is-active"
+            [routerLinkActiveOptions]="item.path === '/' ? exactMatchOptions : defaultMatchOptions"
+            [title]="navigationCollapsed() ? item.label : ''"
+            [attr.aria-label]="item.label"
+          >
+            <span class="nav-icon" aria-hidden="true">
+              <img [src]="'/assets/icons/' + item.icon + '.svg'" alt="" />
+            </span>
+            <span class="nav-copy">
+              <span class="nav-label">{{ item.label }}</span>
+              <span class="nav-hint">{{ item.hint }}</span>
+            </span>
+          </a>
+        }
+      </nav>
+    </aside>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+
+    <footer class="app-footer">
+      <div><span>Signed in</span><strong>{{ user()?.email }}</strong></div>
+      <div><span>Role</span><strong>{{ user()?.role }}</strong></div>
+      <div>
+        <span>{{ lastLoginAt() ? 'Last connection' : 'Session started' }}</span>
+        <strong>{{ connectionTime() }}</strong>
+      </div>
+    </footer>
+  </div>
+} @else {
+  <main class="guest-content">
     <router-outlet />
   </main>
-</div>
+}

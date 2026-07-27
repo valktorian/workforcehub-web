@@ -4,6 +4,7 @@ import { AuthSession, AuthUser } from './models';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly storageKey = 'workforcehub.session.v1';
+  private readonly lastLoginKey = 'workforcehub.last-login.v1';
   private readonly session = signal<AuthSession | null>(this.readSession());
   private expirationTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -21,13 +22,22 @@ export class AuthService {
   readonly isLoggedIn = computed(() => this.user() !== null);
   readonly token = computed(() => this.validSession()?.accessToken ?? null);
   readonly role = computed(() => this.user()?.role ?? null);
+  readonly signedInAt = computed(() => this.validSession()?.signedInAt ?? null);
+  readonly lastLoginAt = computed(() => this.validSession()?.lastLoginAt ?? null);
+  readonly connectionTime = computed(() => {
+    const value = this.lastLoginAt() ?? this.signedInAt();
+    return value ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : 'Unavailable';
+  });
 
   constructor() {
     this.scheduleExpiration(this.session());
   }
 
   startSession(session: AuthSession): void {
-    this.setSession(session);
+    const now = new Date().toISOString();
+    const lastLoginAt = this.readLastLogin(session.email);
+    this.setSession({ ...session, signedInAt: now, lastLoginAt });
+    this.writeLastLogin(session.email, now);
   }
 
   logout(): void {
@@ -36,8 +46,10 @@ export class AuthService {
 
   hasAnyRole(allowedRoles: readonly string[]): boolean {
     if (!allowedRoles.length) return true;
-    const currentRole = this.role();
-    return currentRole ? allowedRoles.includes(currentRole) : false;
+    const currentRole = this.role()?.toLowerCase();
+    return currentRole
+      ? allowedRoles.some((role) => role.toLowerCase() === currentRole)
+      : false;
   }
 
   private validSession(): AuthSession | null {
@@ -75,6 +87,34 @@ export class AuthService {
       window.localStorage.removeItem(this.storageKey);
       return null;
     }
+  }
+
+  private readLastLogin(email: string): string | null {
+    if (typeof window === 'undefined') return null;
+    try {
+      const values = JSON.parse(window.localStorage.getItem(this.lastLoginKey) ?? '{}') as Record<
+        string,
+        string
+      >;
+      return values[email.toLowerCase()] ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private writeLastLogin(email: string, value: string): void {
+    if (typeof window === 'undefined') return;
+    let values: Record<string, string> = {};
+    try {
+      values = JSON.parse(window.localStorage.getItem(this.lastLoginKey) ?? '{}') as Record<
+        string,
+        string
+      >;
+    } catch {
+      values = {};
+    }
+    values[email.toLowerCase()] = value;
+    window.localStorage.setItem(this.lastLoginKey, JSON.stringify(values));
   }
 
   private scheduleExpiration(session: AuthSession | null): void {

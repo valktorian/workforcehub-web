@@ -25,4 +25,8 @@ export class LoginPageService {
       throw error;
     }
   }
+
+  currentRole(): string {
+    return this.auth.role() ?? '';
+  }
 }

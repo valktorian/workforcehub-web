@@ -32,7 +32,13 @@ export class LoginPage {
     try {
       const { email, password } = this.form.getRawValue();
       await this.service.login({ email, password });
-      await this.router.navigateByUrl(this.route.snapshot.queryParamMap.get('redirectTo') || '/profile');
+      const role = this.service.currentRole().toLowerCase();
+      const destination = ['manager', 'hrmanager', 'hradmin'].includes(role)
+        ? '/dashboard'
+        : '/profile';
+      await this.router.navigateByUrl(
+        this.route.snapshot.queryParamMap.get('redirectTo') || destination,
+      );
     } catch (error) {
       this.error.set(error instanceof Error ? error.message : 'Unable to sign in.');
     } finally {

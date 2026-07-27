@@ -1,4 +1,5 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { SelfProfileResponse } from './models';
@@ -67,9 +68,13 @@ export class ProfilePage implements OnInit {
     this.loadError.set(null);
     try {
       this.profile.set(await this.service.getSelf());
-    } catch {
+    } catch (error) {
       this.profile.set(null);
-      this.loadError.set('Unable to load your profile.');
+      this.loadError.set(
+        error instanceof HttpErrorResponse && error.status === 404
+          ? 'Your account is active. HR still needs to create or link your employee profile.'
+          : 'Unable to load your profile.',
+      );
     } finally {
       this.loading.set(false);
     }
