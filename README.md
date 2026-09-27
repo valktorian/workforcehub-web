@@ -1,5 +1,7 @@
 # WorkForceHubWeb
 
+**Live app:** https://valktorian.github.io/workforcehub-web/
+
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.4.
 
 ## Development server
@@ -7,10 +9,14 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 To start a local development server, run:
 
 ```bash
-ng serve
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+This serves the `local` configuration, which reads the API URL from `src/environments/environment.local.ts`. Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+
+## Deployment
+
+Every push to `main` builds the app and deploys it to GitHub Pages through the [Deploy to GitHub Pages](.github/workflows/deploy.yml) workflow. The production API URL is set in `src/environments/environment.ts`.
 
 ## Code scaffolding
 

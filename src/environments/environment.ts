@@ -1,3 +1,3 @@
 export const environment = {
-  apiBaseUrl: '',
+  apiBaseUrl: 'https://workforcehub-api.duckdns.org',
 };
