@@ -10,6 +10,12 @@ body {
   min-height: 100%;
 }
 
+// Fluid root size so every rem (text and spacing) scales with the viewport:
+// ~15px on phones, ~16px on small laptops, up to 18px on wide screens.
+html {
+  font-size: clamp(0.9375rem, 0.85rem + 0.3vw, 1.125rem);
+}
+
 body {
   min-height: 100vh;
 }
