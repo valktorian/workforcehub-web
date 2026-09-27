@@ -22,7 +22,7 @@
         [title]="navigationCollapsed() ? 'Expand navigation' : 'Collapse navigation'"
         (click)="toggleNavigation()"
       >
-        <img src="/assets/icons/arrow-left.svg" alt="" />
+        <img src="assets/icons/arrow-left.svg" alt="" />
       </button>
       <nav class="nav" aria-label="Primary">
         @for (item of navigationItems(); track item.path) {
@@ -35,7 +35,7 @@
             [attr.aria-label]="item.label"
           >
             <span class="nav-icon" aria-hidden="true">
-              <img [src]="'/assets/icons/' + item.icon + '.svg'" alt="" />
+              <img [src]="'assets/icons/' + item.icon + '.svg'" alt="" />
             </span>
             <span class="nav-copy">
               <span class="nav-label">{{ item.label }}</span>

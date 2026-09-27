@@ -15,7 +15,7 @@
     "target": "ES2022",
     "module": "preserve",
     "paths": {
-      "mixology-ui": ["./node_modules/mixology-ui/src/public-api.ts"]
+      "mixology-ui": ["./node_modules/mixology-ui/dist/types/mixology-ui"]
     }
   },
   "angularCompilerOptions": {

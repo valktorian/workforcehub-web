@@ -1,6 +1,6 @@
 ﻿import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { ThemeService } from '../../node_modules/mixology-ui/src/lib/services/theme.service';
+import { ThemeService } from 'mixology-ui';
 import { AuthService } from './core/auth/auth.service';
 
 type AppTheme = 'default' | 'moon' | 'night-meteor';
