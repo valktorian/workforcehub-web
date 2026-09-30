@@ -2,6 +2,14 @@
 
 **Live app:** https://valktorian.github.io/workforcehub-web/
 
+## Demo account
+
+| Email | Password | Role |
+|---|---|---|
+| `HrViewer@workforcehub.com` | `Test1234` | HRViewer |
+
+The HRViewer role can browse and manage employees, schedules, leave and career records, but cannot manage login accounts.
+
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.4.
 
 ## Development server
