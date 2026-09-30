@@ -1,6 +1,7 @@
 ﻿import { Component, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { DASHBOARD_ROLES } from '../../core/auth/roles';
 import { LoginPageService } from './services/login-page.service';
 
 @Component({
@@ -33,7 +34,7 @@ export class LoginPage {
       const { email, password } = this.form.getRawValue();
       await this.service.login({ email, password });
       const role = this.service.currentRole().toLowerCase();
-      const destination = ['manager', 'hrmanager', 'hradmin'].includes(role)
+      const destination = DASHBOARD_ROLES.some((allowed) => allowed.toLowerCase() === role)
         ? '/dashboard'
         : '/profile';
       await this.router.navigateByUrl(

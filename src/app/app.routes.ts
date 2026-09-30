@@ -2,6 +2,7 @@
 import { authGuard } from './core/auth/auth.guard';
 import { guestGuard } from './core/auth/guest.guard';
 import { roleGuard } from './core/auth/role.guard';
+import { ACCOUNT_ADMINS, HR_STAFF } from './core/auth/roles';
 
 export const routes: Routes = [
   {
@@ -34,7 +35,7 @@ export const routes: Routes = [
   {
     path: 'employees',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['HRAdmin', 'HRManager'] },
+    data: { roles: HR_STAFF },
     loadComponent: () =>
       import('./pages/employees-page/employees-page').then((m) => m.EmployeesPage),
   },
@@ -47,7 +48,7 @@ export const routes: Routes = [
   {
     path: 'accounts',
     canActivate: [authGuard, roleGuard],
-    data: { roles: ['HRAdmin', 'HRManager'] },
+    data: { roles: ACCOUNT_ADMINS },
     loadComponent: () =>
       import('./pages/settings-page/settings-page').then((m) => m.SettingsPage),
   },

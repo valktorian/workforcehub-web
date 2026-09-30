@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { ASSIGNABLE_ROLES } from '../../core/auth/roles';
 import { Account, CreateAccountRequest, UpdateAccountRequest } from './models';
 import { SettingsPageService } from './services/settings-page.service';
 
@@ -27,7 +28,7 @@ export class SettingsPage implements OnInit {
   protected readonly pageNumber = signal(1);
   protected readonly totalPages = signal(1);
   protected readonly totalCount = signal(0);
-  protected readonly roles = ['Employee', 'Manager', 'HRManager', 'HRAdmin'];
+  protected readonly roles = ASSIGNABLE_ROLES;
   protected readonly pageSize = 12;
 
   protected readonly filteredAccounts = computed(() => {

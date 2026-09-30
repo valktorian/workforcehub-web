@@ -77,7 +77,7 @@
         <section class="quick-actions">
           <form [formGroup]="statusForm" (ngSubmit)="saveStatus()"><h4>Employment status</h4><select formControlName="employmentStatus">@for (status of employmentStatuses; track status) { <option [value]="status">{{ status === 'OnLeave' ? 'On leave' : status }}</option> }</select><button type="submit">Update status</button></form>
           <div><h4>Profile picture</h4><input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" (change)="onProfilePicture($event)" /><button type="button" [disabled]="!profilePicture" (click)="uploadPicture()">Upload picture</button></div>
-          @if (!selected()!.accountId) {
+          @if (!selected()!.accountId && canManageAccounts()) {
             <div class="account-link">
               <h4>Link login account</h4>
               <select [(ngModel)]="linkAccountId">
@@ -92,7 +92,7 @@
         </section>
       } @else {
         <form class="profile-form" [formGroup]="form" (ngSubmit)="save()">
-          @if (!selected()) {
+          @if (!selected() && canManageAccounts()) {
             <section class="onboarding-section wide">
               <div class="onboarding-head">
                 <div>
@@ -145,7 +145,7 @@
           @if (!selected()) { <label class="wide">Profile picture<input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" (change)="onCreatePicture($event)" /></label> }
           <div class="actions wide">
             @if (selected()) { <button type="button" (click)="cancelEditing()">Cancel</button> }
-            <button class="primary" type="submit" [disabled]="saving()">{{ saving() ? 'Saving...' : selected() ? 'Save changes' : pendingAccount() ? 'Retry profile creation' : 'Create account and profile' }}</button>
+            <button class="primary" type="submit" [disabled]="saving()">{{ saving() ? 'Saving...' : selected() ? 'Save changes' : pendingAccount() ? 'Retry profile creation' : canManageAccounts() ? 'Create account and profile' : 'Create profile' }}</button>
           </div>
         </form>
       }

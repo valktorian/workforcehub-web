@@ -2,6 +2,8 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { AuthService } from '../../core/auth/auth.service';
+import { ACCOUNT_ADMINS, ASSIGNABLE_ROLES } from '../../core/auth/roles';
 import {
   CreateEmployeeRequest,
   ApiProblemResponse,
@@ -23,6 +25,7 @@ export class EmployeesPage implements OnInit {
   private readonly service = inject(EmployeesPageService);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly route = inject(ActivatedRoute);
+  private readonly auth = inject(AuthService);
 
   protected readonly profiles = signal<EmployeeProfileResponse[]>([]);
   protected readonly searchQuery = signal('');
@@ -53,7 +56,8 @@ export class EmployeesPage implements OnInit {
   protected readonly pageSize = 12;
   protected readonly employmentStatuses = ['Active', 'OnLeave', 'Suspended', 'Inactive', 'Terminated'];
   protected readonly organizationRoles = ['Employee', 'Manager', 'HR', 'Admin'];
-  protected readonly accountRoles = ['Employee', 'Manager', 'HRManager', 'HRAdmin'];
+  protected readonly accountRoles = ASSIGNABLE_ROLES;
+  protected readonly canManageAccounts = computed(() => this.auth.hasAnyRole(ACCOUNT_ADMINS));
   protected readonly accounts = signal<OnboardingAccount[]>([]);
   protected readonly pendingAccount = signal<OnboardingAccount | null>(null);
   protected linkAccountId = '';
@@ -84,7 +88,7 @@ export class EmployeesPage implements OnInit {
 
   ngOnInit(): void {
     void this.load();
-    void this.loadAccounts();
+    if (this.canManageAccounts()) void this.loadAccounts();
   }
 
   protected async load(page = this.pageNumber()): Promise<void> {
@@ -168,16 +172,18 @@ export class EmployeesPage implements OnInit {
         this.edit(updated);
         this.message.set('Profile updated.');
       } else {
-        const account = this.pendingAccount() ?? await this.createOnboardingAccount();
+        const account = this.canManageAccounts()
+          ? this.pendingAccount() ?? await this.createOnboardingAccount()
+          : null;
         this.pendingAccount.set(account);
         const created = await this.service.create(
-          this.createRequest(account.id),
+          this.createRequest(account?.id ?? null),
           this.createPicture ?? undefined,
         );
         this.newProfile();
         this.profiles.update((profiles) => [created, ...profiles].slice(0, this.pageSize));
         this.totalCount.update((count) => count + 1);
-        this.message.set('Account and employee profile created.');
+        this.message.set(account ? 'Account and employee profile created.' : 'Employee profile created.');
       }
     }, false, true);
   }

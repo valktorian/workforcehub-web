@@ -2,6 +2,7 @@
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ThemeService } from 'mixology-ui';
 import { AuthService } from './core/auth/auth.service';
+import { ACCOUNT_ADMINS, HR_STAFF } from './core/auth/roles';
 
 type AppTheme = 'default' | 'moon' | 'night-meteor';
 
@@ -65,7 +66,7 @@ export class App {
       hint: 'People directory and staffing data',
       icon: 'users',
       authOnly: true,
-      roles: ['HRAdmin', 'HRManager'],
+      roles: HR_STAFF,
     },
     {
       path: '/schedule',
@@ -80,7 +81,7 @@ export class App {
       hint: 'Workforce access administration',
       icon: 'settings',
       authOnly: true,
-      roles: ['HRAdmin', 'HRManager'],
+      roles: ACCOUNT_ADMINS,
     },
   ];
 

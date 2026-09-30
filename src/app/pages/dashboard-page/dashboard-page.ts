@@ -1,6 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { HR_STAFF, Roles } from '../../core/auth/roles';
 import {
   DashboardProfileResponse,
   PendingLeaveResponse,
@@ -29,8 +30,8 @@ export class DashboardPage implements OnInit {
 
   protected readonly loading = signal(true);
   protected readonly role = this.auth.role;
-  protected readonly isEmployee = computed(() => this.role()?.toLowerCase() === 'employee');
-  protected readonly isHr = computed(() => this.auth.hasAnyRole(['HRAdmin', 'HRManager']));
+  protected readonly isEmployee = computed(() => this.auth.hasAnyRole([Roles.Employee]));
+  protected readonly isHr = computed(() => this.auth.hasAnyRole(HR_STAFF));
   protected readonly employeeCount = signal<number | null>(null);
   protected readonly pendingLeaveCount = signal<number | null>(null);
   protected readonly pendingTimesheetCount = signal<number | null>(null);

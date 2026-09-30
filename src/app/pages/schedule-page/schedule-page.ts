@@ -9,6 +9,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { AuthService } from '../../core/auth/auth.service';
+import { TIME_ADMINS, TIME_REVIEWERS } from '../../core/auth/roles';
 import { LeaveType, TimeEntry, Timesheet } from './models';
 import { LeaveRequest } from './models';
 import { SchedulePageService } from './services/schedule-page.service';
@@ -43,9 +44,9 @@ export class SchedulePage {
   protected readonly pendingLeaveRequests = signal<LeaveRequest[]>([]);
   protected readonly pendingTimesheets = signal<Timesheet[]>([]);
   protected readonly canApproveLeave = computed(() =>
-    this.auth.hasAnyRole(['Manager', 'HRManager', 'HRAdmin']),
+    this.auth.hasAnyRole(TIME_REVIEWERS),
   );
-  protected readonly canReopenTimesheet = computed(() => this.auth.hasAnyRole(['HRAdmin']));
+  protected readonly canReopenTimesheet = computed(() => this.auth.hasAnyRole(TIME_ADMINS));
   protected readonly editor = signal<EditorMode>(null);
   protected readonly selectedEntry = signal<TimeEntry | null>(null);
   protected readonly selectedLeave = signal<LeaveRequest | null>(null);
