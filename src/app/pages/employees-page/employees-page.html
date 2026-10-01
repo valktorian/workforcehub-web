@@ -76,7 +76,7 @@
 
         <section class="quick-actions">
           <form [formGroup]="statusForm" (ngSubmit)="saveStatus()"><h4>Employment status</h4><select formControlName="employmentStatus">@for (status of employmentStatuses; track status) { <option [value]="status">{{ status === 'OnLeave' ? 'On leave' : status }}</option> }</select><button type="submit">Update status</button></form>
-          <div><h4>Profile picture</h4><input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" (change)="onProfilePicture($event)" /><button type="button" [disabled]="!profilePicture" (click)="uploadPicture()">Upload picture</button></div>
+          <div><h4>Profile picture</h4><small class="field-hint">{{ imageRules }}</small><input type="file" [accept]="imageAccept" (change)="onProfilePicture($event)" /><button type="button" [disabled]="!profilePicture" (click)="uploadPicture()">Upload picture</button></div>
           @if (!selected()!.accountId && canManageAccounts()) {
             <div class="account-link">
               <h4>Link login account</h4>
@@ -142,7 +142,7 @@
           <label>Hire date<input type="date" formControlName="hireDate" required /></label>
           <label>Organization role<select formControlName="organizationRole"><option value="">Not assigned</option>@if (selected()?.organizationRole && !isKnownOrganizationRole(selected()!.organizationRole)) { <option [value]="selected()!.organizationRole">{{ selected()!.organizationRole }}</option> }@for (role of organizationRoles; track role) { <option [value]="role">{{ role }}</option> }</select></label>
           <label>Status<select formControlName="employmentStatus">@for (status of employmentStatuses; track status) { <option [value]="status">{{ status === 'OnLeave' ? 'On leave' : status }}</option> }</select></label>
-          @if (!selected()) { <label class="wide">Profile picture<input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" (change)="onCreatePicture($event)" /></label> }
+          @if (!selected()) { <label class="wide">Profile picture <small class="field-hint">{{ imageRules }}</small><input type="file" [accept]="imageAccept" (change)="onCreatePicture($event)" /></label> }
           <div class="actions wide">
             @if (selected()) { <button type="button" (click)="cancelEditing()">Cancel</button> }
             <button class="primary" type="submit" [disabled]="saving()">{{ saving() ? 'Saving...' : selected() ? 'Save changes' : pendingAccount() ? 'Retry profile creation' : canManageAccounts() ? 'Create account and profile' : 'Create profile' }}</button>

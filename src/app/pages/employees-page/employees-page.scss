@@ -84,6 +84,10 @@
 .profile-row small {
   color: var(--text-dim);
 }
+.field-hint {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
 .employee-copy {
   min-width: 0;
   display: grid;

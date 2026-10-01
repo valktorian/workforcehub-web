@@ -1,12 +1,11 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ACCOUNT_ADMINS, ASSIGNABLE_ROLES } from '../../core/auth/roles';
+import { apiErrorMessage, IMAGE_ACCEPT, IMAGE_RULES, validateImageFile } from '../../core/media/image-upload';
 import {
   CreateEmployeeRequest,
-  ApiProblemResponse,
   EmployeeProfileResponse,
   OnboardingAccount,
   UpdateEmployeeEmploymentRequest,
@@ -61,6 +60,8 @@ export class EmployeesPage implements OnInit {
   protected readonly accounts = signal<OnboardingAccount[]>([]);
   protected readonly pendingAccount = signal<OnboardingAccount | null>(null);
   protected linkAccountId = '';
+  protected readonly imageAccept = IMAGE_ACCEPT;
+  protected readonly imageRules = IMAGE_RULES;
   protected createPicture: File | null = null;
   protected profilePicture: File | null = null;
 
@@ -252,14 +253,14 @@ export class EmployeesPage implements OnInit {
     }, false, true);
   }
 
-  protected onCreatePicture(event: Event): void {
+  protected async onCreatePicture(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    this.createPicture = this.validImage(input);
+    this.createPicture = await this.validImage(input);
   }
 
-  protected onProfilePicture(event: Event): void {
+  protected async onProfilePicture(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    this.profilePicture = this.validImage(input);
+    this.profilePicture = await this.validImage(input);
   }
 
   protected profileId(profile: EmployeeProfileResponse): string {
@@ -289,15 +290,18 @@ export class EmployeesPage implements OnInit {
     return profile ? this.profileId(profile) : null;
   }
 
-  private validImage(input: HTMLInputElement): File | null {
+  private async validImage(input: HTMLInputElement): Promise<File | null> {
     const file = input.files?.[0] ?? null;
-    if (file && !['image/jpeg', 'image/png'].includes(file.type)) {
-      this.error.set('Only JPG, JPEG, and PNG images are supported.');
+    this.clearFeedback();
+    if (!file) return null;
+
+    const invalid = await validateImageFile(file);
+    if (invalid) {
+      this.error.set(invalid);
       input.value = '';
       return null;
     }
 
-    this.error.set(null);
     return file;
   }
 
@@ -403,7 +407,7 @@ export class EmployeesPage implements OnInit {
     try {
       await action();
     } catch (error) {
-      this.error.set(this.errorText(error instanceof Error ? error : null));
+      this.error.set(apiErrorMessage(error, 'The profile request failed.'));
     } finally {
       if (loading) this.loading.set(false);
       if (saving) this.saving.set(false);
@@ -413,14 +417,6 @@ export class EmployeesPage implements OnInit {
   private clearFeedback(): void {
     this.error.set(null);
     this.message.set(null);
-  }
-
-  private errorText(error: Error | null): string {
-    if (error instanceof HttpErrorResponse) {
-      const body = error.error as ApiProblemResponse | null;
-      return body?.detail || body?.title || 'The profile request failed.';
-    }
-    return error?.message || 'The profile request failed.';
   }
 
   private nullable(value: string): string | null {

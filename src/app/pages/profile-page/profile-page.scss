@@ -91,6 +91,7 @@ dl {
 }
 
 .picture-upload input { display: none; }
+.field-hint { color: var(--text-dim); font-size: 0.78rem; }
 .picture-error { margin: 0; color: #ff9f9f; }
 
 .profile-grid {

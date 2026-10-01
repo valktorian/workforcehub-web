@@ -19,7 +19,8 @@
     </a>
     <label class="picture-upload">
       <span>{{ pictureUploading() ? 'Uploading...' : 'Change picture' }}</span>
-      <input type="file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" [disabled]="pictureUploading()" (change)="uploadPicture($event)" />
+      <small class="field-hint">{{ imageRules }}</small>
+      <input type="file" [accept]="imageAccept" [disabled]="pictureUploading()" (change)="uploadPicture($event)" />
     </label>
   </article>
 

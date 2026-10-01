@@ -2,6 +2,7 @@ import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { apiErrorMessage, IMAGE_ACCEPT, IMAGE_RULES, validateImageFile } from '../../core/media/image-upload';
 import { SelfProfileResponse } from './models';
 import { ProfilePageService } from './services/profile-page.service';
 
@@ -16,6 +17,8 @@ export class ProfilePage implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly service = inject(ProfilePageService);
 
+  protected readonly imageAccept = IMAGE_ACCEPT;
+  protected readonly imageRules = IMAGE_RULES;
   protected readonly pictureUploading = signal(false);
   protected readonly pictureError = signal<string | null>(null);
   protected readonly loading = signal(true);
@@ -47,18 +50,19 @@ export class ProfilePage implements OnInit {
     const file = input.files?.[0];
     if (!file || this.pictureUploading()) return;
     this.pictureError.set(null);
-    if (!['image/jpeg', 'image/png'].includes(file.type)) {
-      this.pictureError.set('Only JPG, JPEG, and PNG images are supported.');
+    const invalid = await validateImageFile(file);
+    if (invalid) {
+      this.pictureError.set(invalid);
       input.value = '';
       return;
     }
     this.pictureUploading.set(true);
     try {
       this.profile.set(await this.service.uploadPicture(file));
-      input.value = '';
-    } catch {
-      this.pictureError.set('Unable to upload the profile picture.');
+    } catch (error) {
+      this.pictureError.set(apiErrorMessage(error, 'Unable to upload the profile picture.'));
     } finally {
+      input.value = '';
       this.pictureUploading.set(false);
     }
   }
